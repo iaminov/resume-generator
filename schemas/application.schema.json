@@ -1,0 +1,368 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Application Record",
+  "description": "Full tracking record for a job application — contacts, interviews, compensation, activity log, and agent consensus history",
+  "type": "object",
+  "required": ["person", "company", "role", "job_description_file", "resume_file", "status", "status_history", "created_date"],
+  "properties": {
+    "person": {
+      "type": "string",
+      "description": "Person slug matching their profile directory name under data/profiles/"
+    },
+    "company": { "type": "string" },
+    "role": {
+      "type": "string",
+      "description": "Exact job title as posted"
+    },
+    "job_url": {
+      "type": ["string", "null"],
+      "format": "uri"
+    },
+    "job_description_file": {
+      "type": "string",
+      "description": "Path relative to person's profile directory (e.g., job-descriptions/google_senior-swe_2026-04-12.json)"
+    },
+    "resume_file": {
+      "type": "string",
+      "description": "Path relative to person's profile directory (e.g., generated-resumes/google_senior-swe_2026-04-12.docx)"
+    },
+    "profile_file": {
+      "type": "string",
+      "description": "Always profile.json (lives in the person's profile directory)"
+    },
+    "source": {
+      "type": "string",
+      "description": "Where the job was found (LinkedIn, company site, referral, etc.)"
+    },
+    "referral": {
+      "type": ["object", "null"],
+      "description": "Referral details if someone referred the candidate",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the person who referred"
+        },
+        "relationship": {
+          "type": "string",
+          "description": "How the candidate knows them (former colleague, friend, etc.)"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Any context — did they put in a word, submit internally, etc."
+        }
+      }
+    },
+    "applied_date": {
+      "type": ["string", "null"],
+      "format": "date",
+      "description": "Date application was submitted, null if not yet applied"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "ready",
+        "applied",
+        "screening",
+        "phone_interview",
+        "technical_interview",
+        "onsite_interview",
+        "offer",
+        "accepted",
+        "rejected",
+        "withdrawn",
+        "ghosted"
+      ]
+    },
+    "status_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["status", "date"],
+        "properties": {
+          "status": { "type": "string" },
+          "date": { "type": "string", "format": "date-time" },
+          "notes": { "type": "string" }
+        }
+      },
+      "minItems": 1
+    },
+
+    "contacts": {
+      "type": "array",
+      "description": "People at the company the candidate has interacted with",
+      "items": {
+        "type": "object",
+        "required": ["name", "role"],
+        "properties": {
+          "name": { "type": "string" },
+          "role": {
+            "type": "string",
+            "description": "Their role: recruiter, hiring_manager, interviewer, peer, other"
+          },
+          "title": {
+            "type": "string",
+            "description": "Their job title if known (e.g., Senior Engineering Manager)"
+          },
+          "email": {
+            "type": ["string", "null"],
+            "format": "email"
+          },
+          "linkedin": {
+            "type": ["string", "null"]
+          },
+          "notes": {
+            "type": "string",
+            "description": "Anything useful — rapport, topics discussed, their concerns"
+          }
+        }
+      }
+    },
+
+    "interviews": {
+      "type": "array",
+      "description": "Individual interview records, one per interview session",
+      "items": {
+        "type": "object",
+        "required": ["date", "type"],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date of the interview"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["phone_screen", "recruiter_call", "technical", "behavioral", "system_design", "hiring_manager", "panel", "onsite", "take_home", "other"],
+            "description": "Type of interview"
+          },
+          "interviewers": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Names of interviewers (should match contacts[].name)"
+          },
+          "duration_minutes": {
+            "type": "integer"
+          },
+          "topics": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Key topics covered (e.g., system design, distributed systems, leadership)"
+          },
+          "notes": {
+            "type": "string",
+            "description": "How it went — what was discussed, signals, concerns raised, follow-ups mentioned"
+          },
+          "sentiment": {
+            "type": "string",
+            "enum": ["positive", "neutral", "negative", "mixed"],
+            "description": "Overall sense of how the interview went"
+          }
+        }
+      }
+    },
+
+    "compensation": {
+      "type": ["object", "null"],
+      "description": "Compensation details — posted, discussed, and offered",
+      "properties": {
+        "posted_range": {
+          "type": "string",
+          "description": "Salary range from the job posting (e.g., $180k-$250k)"
+        },
+        "discussed_range": {
+          "type": "string",
+          "description": "Range discussed during interviews (e.g., $200k-$230k base)"
+        },
+        "offer": {
+          "type": ["object", "null"],
+          "description": "Formal offer details",
+          "properties": {
+            "base": { "type": "string" },
+            "bonus": { "type": "string" },
+            "equity": { "type": "string" },
+            "other": { "type": "string", "description": "Sign-on, relocation, etc." },
+            "total_comp": { "type": "string" },
+            "notes": { "type": "string" }
+          }
+        },
+        "candidate_target": {
+          "type": "string",
+          "description": "What the candidate is targeting (for negotiation reference)"
+        }
+      }
+    },
+
+    "follow_ups": {
+      "type": "array",
+      "description": "Scheduled follow-up actions",
+      "items": {
+        "type": "object",
+        "required": ["action", "due_date"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "What to do (e.g., Send thank-you to Sarah, Follow up on status)"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "completed": {
+            "type": "boolean",
+            "default": false
+          },
+          "completed_date": {
+            "type": ["string", "null"],
+            "format": "date"
+          }
+        }
+      }
+    },
+
+    "activity_log": {
+      "type": "array",
+      "description": "Timestamped log of all activity — the running journal for this application",
+      "items": {
+        "type": "object",
+        "required": ["date", "entry"],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "entry": {
+            "type": "string",
+            "description": "What happened (e.g., Submitted application via LinkedIn, Recruiter emailed to schedule phone screen)"
+          }
+        }
+      }
+    },
+
+    "outcome": {
+      "type": ["object", "null"],
+      "description": "Final outcome details when the application reaches a terminal status",
+      "properties": {
+        "result": {
+          "type": "string",
+          "enum": ["accepted", "rejected", "withdrawn", "ghosted"]
+        },
+        "reason": {
+          "type": "string",
+          "description": "Why — rejection reason if given, withdrawal reason, etc."
+        },
+        "feedback": {
+          "type": "string",
+          "description": "Any feedback received from the company"
+        },
+        "would_reapply": {
+          "type": "boolean",
+          "description": "Would the candidate consider this company again"
+        },
+        "lessons_learned": {
+          "type": "string",
+          "description": "What to do differently next time"
+        }
+      }
+    },
+
+    "consensus": {
+      "type": "object",
+      "description": "Multi-agent consensus process metadata",
+      "properties": {
+        "total_rounds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "final_votes": {
+          "type": "object",
+          "properties": {
+            "resume_expert": { "type": "string", "enum": ["approve", "revise"] },
+            "employer_emulator": { "type": "string", "enum": ["approve", "revise"] },
+            "recruiter": { "type": "string", "enum": ["approve", "revise"] },
+            "bias_auditor": { "type": "string", "enum": ["approve", "revise"] },
+            "fact_checker": { "type": "string", "enum": ["approve", "revise"] }
+          }
+        },
+        "rounds": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["round_number", "votes"],
+            "properties": {
+              "round_number": { "type": "integer" },
+              "votes": {
+                "type": "object",
+                "properties": {
+                  "resume_expert": {
+                    "type": "object",
+                    "properties": {
+                      "vote": { "type": "string", "enum": ["approve", "revise"] },
+                      "feedback": { "type": "string" }
+                    }
+                  },
+                  "employer_emulator": {
+                    "type": "object",
+                    "properties": {
+                      "vote": { "type": "string", "enum": ["approve", "revise"] },
+                      "feedback": { "type": "string" }
+                    }
+                  },
+                  "recruiter": {
+                    "type": "object",
+                    "properties": {
+                      "vote": { "type": "string", "enum": ["approve", "revise"] },
+                      "feedback": { "type": "string" }
+                    }
+                  },
+                  "bias_auditor": {
+                    "type": "object",
+                    "properties": {
+                      "vote": { "type": "string", "enum": ["approve", "revise"] },
+                      "feedback": { "type": "string" }
+                    }
+                  },
+                  "fact_checker": {
+                    "type": "object",
+                    "properties": {
+                      "vote": { "type": "string", "enum": ["approve", "revise"] },
+                      "feedback": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "gap_analysis": {
+      "type": "object",
+      "description": "Skills gap analysis performed before resume creation",
+      "properties": {
+        "match_percentage": { "type": "number" },
+        "strong_matches": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "partial_matches": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "gaps": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "created_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

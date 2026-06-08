@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Job Description",
+  "description": "Structured job posting data parsed from a URL or text",
+  "type": "object",
+  "required": ["company", "title", "required_skills", "captured_date"],
+  "properties": {
+    "company": { "type": "string" },
+    "title": { "type": "string" },
+    "job_url": {
+      "type": ["string", "null"],
+      "format": "uri",
+      "description": "Original posting URL, null if provided as text"
+    },
+    "location": { "type": "string" },
+    "remote_policy": {
+      "type": "string",
+      "enum": ["onsite", "hybrid", "remote", "unknown"]
+    },
+    "employment_type": {
+      "type": "string",
+      "enum": ["full-time", "part-time", "contract", "freelance", "internship", "unknown"]
+    },
+    "salary_range": {
+      "type": "object",
+      "properties": {
+        "min": { "type": "number" },
+        "max": { "type": "number" },
+        "currency": { "type": "string", "default": "USD" },
+        "period": { "type": "string", "enum": ["annual", "monthly", "hourly"] }
+      }
+    },
+    "department": { "type": "string" },
+    "reports_to": { "type": "string" },
+    "team_size": { "type": "string" },
+    "about_company": {
+      "type": "string",
+      "description": "Brief company description from posting"
+    },
+    "role_summary": {
+      "type": "string",
+      "description": "High-level role description"
+    },
+    "responsibilities": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "required_skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["skill"],
+        "properties": {
+          "skill": { "type": "string" },
+          "years_required": { "type": ["number", "null"] },
+          "level": { "type": "string" }
+        }
+      }
+    },
+    "preferred_skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["skill"],
+        "properties": {
+          "skill": { "type": "string" },
+          "years_required": { "type": ["number", "null"] },
+          "level": { "type": "string" }
+        }
+      }
+    },
+    "education_requirements": {
+      "type": "object",
+      "properties": {
+        "degree_level": { "type": "string" },
+        "field": { "type": "string" },
+        "required": { "type": "boolean" }
+      }
+    },
+    "experience_years": {
+      "type": "object",
+      "properties": {
+        "min": { "type": "number" },
+        "max": { "type": ["number", "null"] }
+      }
+    },
+    "benefits": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "raw_text": {
+      "type": "string",
+      "description": "Full original job description text as captured"
+    },
+    "captured_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the job description was captured/parsed"
+    }
+  }
+}

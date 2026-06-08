@@ -1,0 +1,25 @@
+# Claude Code local settings (user-specific, not shared)
+.claude/settings.local.json
+
+# Keep empty directories in git
+!data/profiles/.gitkeep
+!templates/.gitkeep
+
+# Ignore all per-person profile data (contains personal resumes and info)
+data/profiles/*/
+data/.active-profile
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Generated files that shouldn't be versioned
+*.tmp
+*.xlsx
+*.docx

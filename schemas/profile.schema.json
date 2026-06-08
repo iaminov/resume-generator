@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Person Profile",
+  "description": "Structured skills and experience database for a person, extracted from source resumes",
+  "type": "object",
+  "required": ["person_slug", "name", "source_files", "skills", "experience", "last_updated"],
+  "properties": {
+    "person_slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "URL-safe identifier (e.g., john-doe)"
+    },
+    "name": {
+      "type": "object",
+      "required": ["full"],
+      "properties": {
+        "full": { "type": "string" },
+        "first": { "type": "string" },
+        "last": { "type": "string" }
+      }
+    },
+    "contact": {
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "location": { "type": "string" },
+        "linkedin": { "type": "string", "format": "uri" },
+        "portfolio": { "type": "string", "format": "uri" },
+        "github": { "type": "string", "format": "uri" }
+      }
+    },
+    "professional_summary": {
+      "type": "string",
+      "description": "As written in the source resume"
+    },
+    "source_files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["file_path", "parsed_date"],
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Filename within the person's source-resumes/ directory (e.g., resume_v1.pdf)"
+          },
+          "parsed_date": { "type": "string", "format": "date" },
+          "file_type": { "type": "string", "enum": ["pdf", "docx"] }
+        }
+      },
+      "minItems": 1
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "category", "source_file"],
+        "properties": {
+          "name": { "type": "string" },
+          "category": {
+            "type": "string",
+            "description": "e.g., Programming Language, Framework, Tool, Methodology, Soft Skill, Domain"
+          },
+          "proficiency": {
+            "type": "string",
+            "enum": ["beginner", "intermediate", "advanced", "expert"],
+            "description": "Inferred from evidence in resume, not assumed"
+          },
+          "years_experience": {
+            "type": "number",
+            "description": "Estimated from resume timeline, null if unclear"
+          },
+          "evidence": {
+            "type": "string",
+            "description": "How this skill was demonstrated in the resume"
+          },
+          "source_file": { "type": "string" }
+        }
+      }
+    },
+    "experience": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["company", "title", "start_date", "bullets", "source_file"],
+        "properties": {
+          "company": { "type": "string" },
+          "title": { "type": "string" },
+          "start_date": {
+            "type": "string",
+            "description": "ISO 8601: YYYY-MM or YYYY-MM-DD"
+          },
+          "end_date": {
+            "type": ["string", "null"],
+            "description": "ISO 8601 or null if current role"
+          },
+          "location": { "type": "string" },
+          "is_current": { "type": "boolean" },
+          "bullets": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "skills_used": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Skills demonstrated in this role"
+          },
+          "source_file": { "type": "string" }
+        }
+      }
+    },
+    "education": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["institution", "source_file"],
+        "properties": {
+          "institution": { "type": "string" },
+          "degree": { "type": "string" },
+          "field_of_study": { "type": "string" },
+          "start_date": { "type": "string" },
+          "end_date": { "type": "string" },
+          "gpa": { "type": "string" },
+          "relevant_coursework": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "source_file": { "type": "string" }
+        }
+      }
+    },
+    "certifications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "source_file"],
+        "properties": {
+          "name": { "type": "string" },
+          "issuer": { "type": "string" },
+          "date_obtained": { "type": "string" },
+          "expiration_date": { "type": ["string", "null"] },
+          "credential_id": { "type": "string" },
+          "source_file": { "type": "string" }
+        }
+      }
+    },
+    "projects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "source_file"],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "technologies": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "outcomes": { "type": "string" },
+          "url": { "type": "string", "format": "uri" },
+          "source_file": { "type": "string" }
+        }
+      }
+    },
+    "awards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "issuer": { "type": "string" },
+          "date": { "type": "string" },
+          "description": { "type": "string" },
+          "source_file": { "type": "string" }
+        }
+      }
+    },
+    "publications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "publisher": { "type": "string" },
+          "date": { "type": "string" },
+          "url": { "type": "string", "format": "uri" },
+          "source_file": { "type": "string" }
+        }
+      }
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

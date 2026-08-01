@@ -19,7 +19,6 @@ PROFILES_DIR = DATA_DIR / "profiles"
 ACTIVE_PROFILE_FILE = DATA_DIR / ".active-profile"
 
 # Import the docx converter from sibling module
-sys.path.insert(0, str(Path(__file__).parent))
 from docx_to_md import docx_to_md
 
 

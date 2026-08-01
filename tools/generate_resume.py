@@ -62,7 +62,7 @@ from pathlib import Path
 
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
@@ -110,6 +110,26 @@ def add_section_heading(doc, text):
     pBdr.append(bottom)
     pPr.append(pBdr)
 
+    return para
+
+
+def content_width(doc):
+    """Usable text width of the page, i.e. page width minus both margins."""
+    section = doc.sections[0]
+    return section.page_width - section.left_margin - section.right_margin
+
+
+def add_right_tab(doc, para):
+    """Set a right-aligned tab stop at the right margin.
+
+    Text after a tab character then aligns flush to the right edge of the
+    page, producing a clean vertical column of dates without using a table.
+    Tables are avoided deliberately: some ATS parsers reorder or drop table
+    cells, whereas tab stops keep the document single-column and parseable.
+    """
+    para.paragraph_format.tab_stops.add_tab_stop(
+        content_width(doc), WD_TAB_ALIGNMENT.RIGHT
+    )
     return para
 
 
@@ -203,24 +223,28 @@ def build_experience(doc, data):
         return
     add_section_heading(doc, "Professional Experience")
     for role in experience:
-        # Title line
+        # Line 1: TITLE ......................................... dates
         para = doc.add_paragraph()
         para.paragraph_format.space_before = Pt(8)
         para.paragraph_format.space_after = Pt(2)
+        add_right_tab(doc, para)
 
         title_run = para.add_run(role.get("title", "").upper())
         set_font(title_run, size=ROLE_TITLE_SIZE, bold=True)
 
-        # Company + location + dates
-        para.add_run("\n")
-        company = role.get("company", "")
-        meta_parts = [company]
+        if role.get("dates"):
+            date_run = para.add_run("\t" + role["dates"])
+            set_font(date_run, color=COLOR_META)
+
+        # Line 2: Company — Location
+        meta_parts = [role.get("company", "")]
         if role.get("location"):
             meta_parts.append(role["location"])
-        if role.get("dates"):
-            meta_parts.append(role["dates"])
-        meta_run = para.add_run(" | ".join(meta_parts))
-        set_font(meta_run, color=COLOR_META)
+        meta_parts = [p for p in meta_parts if p]
+        if meta_parts:
+            para.add_run("\n")
+            meta_run = para.add_run(" — ".join(meta_parts))
+            set_font(meta_run, color=COLOR_META)
 
         for bullet in role.get("bullets", []):
             add_bullet(doc, bullet)
@@ -270,6 +294,7 @@ def build_education(doc, data):
         para = doc.add_paragraph()
         para.paragraph_format.space_before = Pt(2)
         para.paragraph_format.space_after = Pt(2)
+        add_right_tab(doc, para)
         degree = edu.get("degree", "")
         if degree:
             run = para.add_run(degree)
@@ -280,7 +305,7 @@ def build_education(doc, data):
             set_font(run)
         dates = edu.get("dates", "")
         if dates:
-            run = para.add_run(f" ({dates})")
+            run = para.add_run("\t" + dates)
             set_font(run, color=COLOR_META)
         for detail in edu.get("details", []):
             d_para = doc.add_paragraph()
@@ -300,11 +325,16 @@ def build_certifications(doc, data):
         para = doc.add_paragraph()
         para.paragraph_format.space_before = Pt(1)
         para.paragraph_format.space_after = Pt(1)
+        add_right_tab(doc, para)
         run = para.add_run(cert.get("name", ""))
         set_font(run, bold=True)
+        issuer = cert.get("issuer", "")
+        if issuer:
+            run = para.add_run(f" — {issuer}")
+            set_font(run, color=COLOR_META)
         date = cert.get("date", "")
         if date:
-            run = para.add_run(f" ({date})")
+            run = para.add_run("\t" + date)
             set_font(run, color=COLOR_META)
 
 

@@ -16,10 +16,10 @@ Generate a tailored, optimized resume through the 5-agent consensus workflow.
 
 1. **Gather inputs**:
    - **Job posting** — check these sources in order:
-     1. Files in `data/profiles/{slug}/job-postings/` (PDF or DOCX). For DOCX,
-        convert with `python3 tools/docx_to_md.py <file>`. For PDF, read
-        directly with the Read tool. If multiple files exist, ask the user
-        which one (or process the most recent).
+     1. Files in `data/profiles/{slug}/job-postings/` (PDF, DOCX, or TXT). For
+        DOCX, convert with `python3 tools/docx_to_md.py <file>`. For PDF or
+        TXT, read directly with the Read tool. If multiple files exist, ask
+        the user which one (or process the most recent).
      2. URL provided by the user
      3. Text pasted by the user
    - **Profile**: Load from `data/profiles/{slug}/profile.json`

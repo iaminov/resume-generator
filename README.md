@@ -1,6 +1,6 @@
 # Resume AI - Multi-Agent Resume Optimization System
 
-A Claude Code-powered system that parses resumes, builds skills databases, and generates tailored resumes using five specialized AI agents that collaborate through a consensus-based review process.
+A Claude Code-powered system that parses resumes, builds skills databases, and generates tailored resumes using five specialized AI agents that collaborate through a consensus-based review process (with a 6th orchestrator agent).
 
 ## Quick Start
 
@@ -24,6 +24,8 @@ source .venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 ```
+
+(Alternatively, use `python` instead of `python3` if the `python3` command is not available.)
 
 ### First-Time Workflow
 
@@ -111,7 +113,7 @@ Creates an optimized, job-specific resume through the full 5-agent consensus wor
 2. Runs a gap analysis (strong matches, partial matches, gaps) and presents it before proceeding
 3. Launches the orchestrator agent to manage the consensus process:
    - Resume Expert creates the initial draft
-   - All 3 agents review in parallel (max 5 rounds)
+   - All 5 agents review in parallel (max 5 rounds)
    - Each round reports vote status to the user
 4. Generates the final `.docx` resume in the active profile's `generated-resumes/`
 5. Creates an application tracking record in the active profile's `applications/`
@@ -235,7 +237,7 @@ data/
     {slug}/
       profile.json             # Comprehensive extracted profile
       source-resumes/          # Input: PDF/DOCX resume files
-      job-postings/            # Input: job posting PDF/DOCX files
+      job-postings/            # Input: job posting PDF/DOCX/TXT files
       applications/            # JSON: application tracking records
       job-descriptions/        # JSON: parsed/structured job postings
       generated-resumes/       # Output: tailored DOCX resumes
@@ -244,7 +246,8 @@ templates/                     # DOCX resume templates (shared)
 schemas/                       # JSON Schema files for data validation (shared)
 .claude/
   agents/                      # Agent definitions (orchestrator, resume-expert,
-                               #   employer-emulator, recruiter)
+                               #   employer-emulator, recruiter, bias-auditor,
+                               #   fact-checker)
   skills/                      # Skill definitions (profile-create, profile-switch,
                                #   profile-delete, parse-resumes, create-resume,
                                #   review-job, track-application)

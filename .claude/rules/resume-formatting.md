@@ -13,6 +13,19 @@ paths:
 - Margins: 0.5-0.75 inches all sides
 - Single column layout (no tables, text boxes, or columns - ATS hostile)
 
+## Date Alignment
+- Dates are right-aligned to the right margin using a **right tab stop**, so
+  they form a clean vertical column the reader can scan for chronology
+- Applies to Professional Experience, Education, and Certifications
+- Layout per role: `TITLE` ⇥ `dates` on line one, `Company — Location` on line two
+- **Never use a table to achieve this.** Tables are ATS-hostile: some parsers
+  reorder or drop cells. A right tab stop keeps the document genuinely single
+  column while producing the same visual result
+- The tab stop is placed at page width minus both margins, computed from the
+  document section rather than hardcoded, so it stays correct if margins or
+  page size change
+- `tools/generate_resume.py` applies this automatically — no per-resume work
+
 ## Section Order (Standard)
 1. Name and contact information (header)
 2. Professional Summary (3-4 lines max)

@@ -4,7 +4,7 @@
 Multi-agent system that parses resumes, builds skills databases, and generates
 tailored resumes using five specialized agents (Resume Expert, Employer Emulator,
 Recruiter, Bias Auditor, Fact Checker) that collaborate through a consensus-based
-review process.
+review process (with a 6th orchestrator agent).
 
 ## Architecture
 - **Data format**: JSON files for all structured data (profiles, applications, job descriptions)
@@ -21,7 +21,7 @@ data/
     {slug}/
       profile.json             # Comprehensive extracted profile (single source of truth)
       source-resumes/          # Input: person's PDF/DOCX resume files
-      job-postings/            # Input: job posting PDF/DOCX files to apply for
+      job-postings/            # Input: job posting PDF/DOCX/TXT files to apply for
       applications/            # JSON: application tracking records
       job-descriptions/        # JSON: parsed/structured job postings
       generated-resumes/       # Output: tailored DOCX resumes
@@ -109,3 +109,4 @@ Python packages are listed in `requirements.txt`. Install via:
 ```bash
 python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
 ```
+(Alternatively, "python" if the "python3" command is not available.)

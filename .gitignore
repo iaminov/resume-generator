@@ -13,6 +13,9 @@ data/.active-profile
 .DS_Store
 Thumbs.db
 
+# JetBrains IDE
+.idea/
+
 # Python
 __pycache__/
 *.pyc

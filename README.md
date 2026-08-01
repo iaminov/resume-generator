@@ -109,17 +109,20 @@ Creates an optimized, job-specific resume through the full 5-agent consensus wor
 **Usage:** Run `/create-resume`, then provide a job posting (URL or pasted text).
 
 **What it does:**
-1. Parses the job description and saves it to the active profile's `output/output-job-descriptions/`
-2. Runs a gap analysis (strong matches, partial matches, gaps) and presents it before proceeding
-3. Launches the orchestrator agent to manage the consensus process:
+1. Parses the job description
+2. **Checks for a duplicate** — searches `applications/` for an existing record with the same company + role. If one exists, it shows you the existing status, resume file, and creation date (and flags if your profile has been updated since), then asks whether to proceed. It never regenerates a resume silently.
+3. Saves the job description to the active profile's `output/output-job-descriptions/`
+4. Runs a gap analysis (strong matches, partial matches, gaps) and presents it before proceeding
+5. Launches the orchestrator agent to manage the consensus process:
    - Resume Expert creates the initial draft
    - All 5 agents review in parallel (max 5 rounds)
    - Each round reports vote status to the user
-4. Generates the final `.docx` resume in the active profile's `output/output-generated-resumes/`
-5. Creates an application tracking record in the active profile's `applications/`
-6. Presents the result with consensus summary for user approval
+6. Generates the final `.docx` resume in the active profile's `output/output-generated-resumes/`
+7. Creates an application tracking record in the active profile's `applications/`
+8. **Archives the source posting** — if the job came from a file in `input/input-job-postings/`, that file is moved into `input/input-job-postings/processed/` so it no longer shows up as a pickable input. **To force the same posting to be reprocessed** (e.g., you updated your profile and want a fresh resume for it), just move the file back out of `processed/` into `input-job-postings/` — no command needed.
+9. Presents the result with consensus summary for user approval
 
-**Rules:** The consensus process is never skipped. Gap analysis is shown before generation so the user can decide not to apply.
+**Rules:** The consensus process is never skipped. Gap analysis is shown before generation so the user can decide not to apply. Duplicate applications require explicit user confirmation before a second resume is generated.
 
 ---
 
@@ -239,6 +242,9 @@ data/
       input/
         input-resumes/                   # Input: PDF/DOCX resume files
         input-job-postings/              # Input: job posting PDF/DOCX/TXT files
+          processed/                     # Postings already turned into a resume by
+                                          #   /create-resume; move a file back out
+                                          #   of here to force it to be reprocessed
       applications/                      # JSON: application tracking records
       output/
         output-job-descriptions/         # JSON: parsed/structured job postings

@@ -16,12 +16,18 @@ generating a resume. Useful for deciding whether to apply.
    All paths below are relative to `data/profiles/{slug}/`.
 
 1. **Get the job posting** — check these sources in order:
-   1. Files in `data/profiles/{slug}/input/input-job-postings/` (PDF, DOCX,
-      or TXT). For DOCX, convert with `python3 tools/docx_to_md.py <file>`.
-      For PDF or TXT, read directly with the Read tool. If multiple files
-      exist, ask the user which one (or process the most recent).
+   1. Files directly inside `data/profiles/{slug}/input/input-job-postings/`
+      (PDF, DOCX, or TXT) — do NOT look inside its `processed/` subfolder;
+      those postings have already had a resume generated for them via
+      `/create-resume`. For DOCX, convert with
+      `python3 tools/docx_to_md.py <file>`. For PDF or TXT, read directly
+      with the Read tool. If multiple files exist, ask the user which one
+      (or process the most recent).
    2. URL provided by the user
    3. Text pasted by the user
+
+   `/review-job` never moves the source file — only `/create-resume` archives
+   a posting into `processed/`, since only it produces a resume/application.
 
 2. **Get the person's profile**: Load from `data/profiles/{slug}/profile.json`
    - The profile must already exist (built via `/parse-resumes`). If `profile.json`

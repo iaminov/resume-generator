@@ -43,6 +43,11 @@ All skills that operate on person data must resolve the active profile first:
   `output/output-generated-resumes/` directory
 - All file references in application records are relative to the person's
   profile directory (e.g., `output/output-job-descriptions/google_senior-swe_2026-04-12.json`)
+- Before creating a new application, check `applications/` for an existing
+  record with the same company + role. If one exists, surface it to the user
+  (status, resume file, created date, whether `profile.json` is newer) and
+  ask before generating another resume for the same job — never silently
+  create a duplicate
 
 ## Per-Person Directory Structure
 
@@ -54,6 +59,9 @@ data/profiles/{slug}/
   input/
     input-resumes/                    # Input PDF/DOCX resume files
     input-job-postings/               # Input job posting PDF/DOCX/TXT files
+      processed/                      # Postings already turned into a resume
+                                       #   (moved here by /create-resume; move
+                                       #   a file back out to reprocess it)
   applications/                       # Application tracking records
   output/
     output-job-descriptions/          # Parsed/structured job postings (JSON)

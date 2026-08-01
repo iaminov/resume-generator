@@ -23,6 +23,8 @@ data/
       input/
         input-resumes/                   # Input: person's PDF/DOCX resume files
         input-job-postings/              # Input: job posting PDF/DOCX/TXT files to apply for
+          processed/                     # Postings already turned into a resume;
+                                          #   move a file back out to reprocess it
       applications/                      # JSON: application tracking records
       output/
         output-job-descriptions/         # JSON: parsed/structured job postings
@@ -52,6 +54,11 @@ See `.claude/agents/` for full agent definitions.
   matching, skill extraction, or profile building.
 - All generated content must be traceable to input resume data
 - Validate all JSON against schemas in `schemas/` before writing
+- **NEVER silently regenerate a resume for a company+role that already has an
+  application record** - `/create-resume` checks `applications/` first and
+  asks the user before proceeding. Once a resume is generated, the source
+  file in `input-job-postings/` is moved into its `processed/` subfolder;
+  moving it back out re-enables it for reprocessing.
 - Application records are the central tracking unit — they capture not just the
   resume but the full lifecycle: contacts, interviews, compensation, follow-ups,
   activity log, and outcome. See `schemas/application.schema.json` for the full

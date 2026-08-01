@@ -19,6 +19,7 @@ ACTIVE_PROFILE_FILE = DATA_DIR / ".active-profile"
 SUBDIRS = [
     "input/input-resumes",
     "input/input-job-postings",
+    "input/input-job-postings/processed",
     "applications",
     "output/output-job-descriptions",
     "output/output-generated-resumes",

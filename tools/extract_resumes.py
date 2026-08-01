@@ -39,7 +39,7 @@ def main():
         print("Error: No active profile set. Run profile_switch.py or pass --slug.", file=sys.stderr)
         sys.exit(1)
 
-    source_dir = PROFILES_DIR / slug / "source-resumes"
+    source_dir = PROFILES_DIR / slug / "input" / "input-resumes"
     if not source_dir.exists():
         print(f"Error: {source_dir} does not exist.", file=sys.stderr)
         sys.exit(1)

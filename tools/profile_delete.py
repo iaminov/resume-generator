@@ -35,11 +35,11 @@ def inventory(profile_dir: Path) -> dict:
     """Build an inventory of what exists in the profile directory."""
     return {
         "has_profile_json": (profile_dir / "profile.json").exists(),
-        "source_resumes": count_files(profile_dir / "source-resumes"),
-        "job_postings": count_files(profile_dir / "job-postings"),
+        "input_resumes": count_files(profile_dir / "input" / "input-resumes"),
+        "input_job_postings": count_files(profile_dir / "input" / "input-job-postings"),
         "applications": count_files(profile_dir / "applications", "*.json"),
-        "job_descriptions": count_files(profile_dir / "job-descriptions", "*.json"),
-        "generated_resumes": count_files(profile_dir / "generated-resumes", "*.docx"),
+        "output_job_descriptions": count_files(profile_dir / "output" / "output-job-descriptions", "*.json"),
+        "output_generated_resumes": count_files(profile_dir / "output" / "output-generated-resumes", "*.docx"),
     }
 
 

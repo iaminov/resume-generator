@@ -19,8 +19,9 @@ description: Create a new person profile directory with the full folder structur
    - Show the created directory path
    - Confirm it was set as active
    - Remind them to:
-     - Add resume files to `source-resumes/` and run `/parse-resumes`
-     - Drop job posting files (PDF/DOCX/TXT) into `job-postings/` for `/create-resume`
+     - Add resume files to `input/input-resumes/` and run `/parse-resumes`
+     - Drop job posting files (PDF/DOCX/TXT) into `input/input-job-postings/`
+       for `/create-resume`
 
 4. If the script exits with an error (profile already exists), relay the error
    and suggest `/profile-switch` instead.

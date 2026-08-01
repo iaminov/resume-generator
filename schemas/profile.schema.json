@@ -42,7 +42,7 @@
         "properties": {
           "file_path": {
             "type": "string",
-            "description": "Filename within the person's source-resumes/ directory (e.g., resume_v1.pdf)"
+            "description": "Filename within the person's input/input-resumes/ directory (e.g., resume_v1.pdf)"
           },
           "parsed_date": { "type": "string", "format": "date" },
           "file_type": { "type": "string", "enum": ["pdf", "docx"] }

@@ -1,6 +1,6 @@
 ---
 paths:
-  - "data/profiles/*/generated-resumes/**"
+  - "data/profiles/*/output/output-generated-resumes/**"
   - "templates/**"
 ---
 

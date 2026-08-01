@@ -19,7 +19,8 @@ description: Delete a person's profile directory and all associated data after u
    ```
    Parse the JSON output and show the user a clear inventory:
    - Whether it's the active profile
-   - Number of source resumes, applications, job descriptions, generated resumes
+   - Number of input resumes, input job postings, applications, output job
+     descriptions, output generated resumes
 
 3. **Ask the user to confirm deletion.** This is destructive and irreversible.
    Do NOT proceed without explicit confirmation.

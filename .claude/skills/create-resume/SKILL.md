@@ -16,10 +16,10 @@ Generate a tailored, optimized resume through the 5-agent consensus workflow.
 
 1. **Gather inputs**:
    - **Job posting** — check these sources in order:
-     1. Files in `data/profiles/{slug}/job-postings/` (PDF, DOCX, or TXT). For
-        DOCX, convert with `python3 tools/docx_to_md.py <file>`. For PDF or
-        TXT, read directly with the Read tool. If multiple files exist, ask
-        the user which one (or process the most recent).
+     1. Files in `data/profiles/{slug}/input/input-job-postings/` (PDF, DOCX,
+        or TXT). For DOCX, convert with `python3 tools/docx_to_md.py <file>`.
+        For PDF or TXT, read directly with the Read tool. If multiple files
+        exist, ask the user which one (or process the most recent).
      2. URL provided by the user
      3. Text pasted by the user
    - **Profile**: Load from `data/profiles/{slug}/profile.json`
@@ -30,7 +30,7 @@ Generate a tailored, optimized resume through the 5-agent consensus workflow.
 2. **Parse job description**:
    - Extract: title, company, required skills, preferred skills, responsibilities,
      qualifications, salary range (if listed), location, remote policy
-   - Save to `data/profiles/{slug}/job-descriptions/{company}_{role}_{date}.json`
+   - Save to `data/profiles/{slug}/output/output-job-descriptions/{company}_{role}_{date}.json`
    - Validate against `schemas/job-description.schema.json`
 
 3. **Gap analysis**:
@@ -52,7 +52,7 @@ Generate a tailored, optimized resume through the 5-agent consensus workflow.
      experience, education, certifications, projects, publications, awards)
    - Save the content JSON to a temp file, then run:
      ```
-     python3 tools/generate_resume.py content.json data/profiles/{slug}/generated-resumes/{First}_{Last}_{company-slug}_{role-slug}_{YYYY-MM-DD}.docx
+     python3 tools/generate_resume.py content.json data/profiles/{slug}/output/output-generated-resumes/{First}_{Last}_{company-slug}_{role-slug}_{YYYY-MM-DD}.docx
      ```
    - Do NOT write python-docx code inline or create new scripts — always use the
      pre-built `tools/generate_resume.py`
@@ -64,7 +64,8 @@ Generate a tailored, optimized resume through the 5-agent consensus workflow.
    - Initial status: `draft` (changes to `ready` after user approval)
    - Include all consensus metadata
    - File references within the record are relative to the person's profile
-     directory (e.g., `job-descriptions/...`, `generated-resumes/...`, `profile.json`)
+     directory (e.g., `output/output-job-descriptions/...`,
+     `output/output-generated-resumes/...`, `profile.json`)
 
 7. **Present to user**:
    - Show final resume content

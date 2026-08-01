@@ -20,11 +20,11 @@
     },
     "job_description_file": {
       "type": "string",
-      "description": "Path relative to person's profile directory (e.g., job-descriptions/google_senior-swe_2026-04-12.json)"
+      "description": "Path relative to person's profile directory (e.g., output/output-job-descriptions/google_senior-swe_2026-04-12.json)"
     },
     "resume_file": {
       "type": "string",
-      "description": "Path relative to person's profile directory (e.g., generated-resumes/google_senior-swe_2026-04-12.docx)"
+      "description": "Path relative to person's profile directory (e.g., output/output-generated-resumes/google_senior-swe_2026-04-12.docx)"
     },
     "profile_file": {
       "type": "string",

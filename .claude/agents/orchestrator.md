@@ -14,8 +14,8 @@ All data paths are relative to the active person's profile directory. Read
 `data/.active-profile` to get the slug, then use `data/profiles/{slug}/` as
 the root for all file operations:
 - Profile: `data/profiles/{slug}/profile.json`
-- Job descriptions: `data/profiles/{slug}/job-descriptions/`
-- Generated resumes: `data/profiles/{slug}/generated-resumes/`
+- Job descriptions: `data/profiles/{slug}/output/output-job-descriptions/`
+- Generated resumes: `data/profiles/{slug}/output/output-generated-resumes/`
 - Applications: `data/profiles/{slug}/applications/`
 
 ## Your Responsibilities
@@ -23,7 +23,7 @@ the root for all file operations:
 1. **Intake**: Receive job description (URL or text) and load the active
    person's profile from `data/profiles/{slug}/profile.json`
 2. **Job Analysis**: Parse and structure the job requirements into
-   `data/profiles/{slug}/job-descriptions/` as JSON
+   `data/profiles/{slug}/output/output-job-descriptions/` as JSON
 3. **Initial Draft**: Ask the resume-expert agent to create the first resume draft
    based on the person's profile and job requirements
 4. **Consensus Review Loop** (max 5 rounds):
@@ -37,7 +37,7 @@ the root for all file operations:
       Accuracy is non-negotiable — no other agent can override a factual error.
    f. If round 5 reached without consensus: present the best version with
       dissenting notes to the user for final decision
-5. **Output**: Save final resume as .docx in `data/profiles/{slug}/generated-resumes/`
+5. **Output**: Save final resume as .docx in `data/profiles/{slug}/output/output-generated-resumes/`
 6. **Tracking**: Create application record in `data/profiles/{slug}/applications/`
 
 ## Consensus Protocol

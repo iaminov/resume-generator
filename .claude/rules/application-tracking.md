@@ -12,10 +12,10 @@ Every application record MUST capture:
 - `role`: exact job title as posted
 - `job_url`: original job posting URL
 - `job_description_file`: path to saved job description JSON, relative to the
-  person's profile directory (e.g., `job-descriptions/google_senior-swe_2026-04-12.json`)
+  person's profile directory (e.g., `output/output-job-descriptions/google_senior-swe_2026-04-12.json`)
 - `resume_file`: path to the generated resume .docx, relative to the person's
   profile directory (e.g.,
-  `generated-resumes/Jane_Doe_acme_senior-platform-engineer_2026-05-26.docx`)
+  `output/output-generated-resumes/Jane_Doe_acme_senior-platform-engineer_2026-05-26.docx`)
 - `applied_date`: ISO 8601 date when application was submitted
 - `source`: where the job was found (LinkedIn, company site, referral, etc.)
 - `status`: current application status

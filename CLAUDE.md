@@ -8,8 +8,8 @@ review process (with a 6th orchestrator agent).
 
 ## Architecture
 - **Data format**: JSON files for all structured data (profiles, applications, job descriptions)
-- **Resume input**: PDF and Word (.docx) formats in active profile's `source-resumes/` directory
-- **Resume output**: Word (.docx) format in active profile's `generated-resumes/` directory
+- **Resume input**: PDF and Word (.docx) formats in active profile's `input/input-resumes/` directory
+- **Resume output**: Word (.docx) format in active profile's `output/output-generated-resumes/` directory
 - **Agent consensus**: 5 agents review each resume, max 5 revision rounds
 - **Multi-person**: Each person gets their own directory under `data/profiles/` containing all their data
 
@@ -19,12 +19,14 @@ data/
   .active-profile              # Active person slug (e.g., "jane-doe")
   profiles/
     {slug}/
-      profile.json             # Comprehensive extracted profile (single source of truth)
-      source-resumes/          # Input: person's PDF/DOCX resume files
-      job-postings/            # Input: job posting PDF/DOCX/TXT files to apply for
-      applications/            # JSON: application tracking records
-      job-descriptions/        # JSON: parsed/structured job postings
-      generated-resumes/       # Output: tailored DOCX resumes
+      profile.json                       # Comprehensive extracted profile (single source of truth)
+      input/
+        input-resumes/                   # Input: person's PDF/DOCX resume files
+        input-job-postings/              # Input: job posting PDF/DOCX/TXT files to apply for
+      applications/                      # JSON: application tracking records
+      output/
+        output-job-descriptions/         # JSON: parsed/structured job postings
+        output-generated-resumes/        # Output: tailored DOCX resumes
 tools/                         # Shared utility scripts (see Tools section below)
 templates/                     # DOCX resume templates (shared)
 schemas/                       # JSON Schema files for data validation (shared)
@@ -48,7 +50,7 @@ See `.claude/agents/` for full agent definitions.
   Use `tools/docx_to_md.py` for DOCX text extraction, Read for PDFs, then
   comprehend the content directly. Do not write Python/scripts for pattern
   matching, skill extraction, or profile building.
-- All generated content must be traceable to source resume data
+- All generated content must be traceable to input resume data
 - Validate all JSON against schemas in `schemas/` before writing
 - Application records are the central tracking unit — they capture not just the
   resume but the full lifecycle: contacts, interviews, compensation, follow-ups,

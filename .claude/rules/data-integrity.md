@@ -28,7 +28,7 @@ All skills that operate on person data must resolve the active profile first:
 
 - Skills and experience MUST come from parsed source resumes only
 - Every entry in a profile must include `source_file` -- the filename of the
-  original resume within the person's `source-resumes/` directory (e.g.,
+  original resume within the person's `input/input-resumes/` directory (e.g.,
   `resume_v1.pdf`, not a full path)
 - Proficiency levels must be inferred from evidence, not assumed
 - Dates must be in ISO 8601 format (YYYY-MM-DD or YYYY-MM)
@@ -40,9 +40,9 @@ All skills that operate on person data must resolve the active profile first:
 - Status changes must include a timestamp
 - The job description snapshot must be saved at time of application (URLs go stale)
 - Resume version used must reference the generated file within the person's
-  `generated-resumes/` directory
+  `output/output-generated-resumes/` directory
 - All file references in application records are relative to the person's
-  profile directory (e.g., `job-descriptions/google_senior-swe_2026-04-12.json`)
+  profile directory (e.g., `output/output-job-descriptions/google_senior-swe_2026-04-12.json`)
 
 ## Per-Person Directory Structure
 
@@ -50,12 +50,14 @@ Each person's data lives under `data/profiles/{slug}/`:
 
 ```
 data/profiles/{slug}/
-  profile.json               # Comprehensive extracted profile
-  source-resumes/            # Input PDF/DOCX resume files
-  job-postings/              # Input job posting PDF/DOCX files
-  applications/              # Application tracking records
-  job-descriptions/          # Parsed/structured job postings (JSON)
-  generated-resumes/         # Tailored resume output
+  profile.json                        # Comprehensive extracted profile
+  input/
+    input-resumes/                    # Input PDF/DOCX resume files
+    input-job-postings/               # Input job posting PDF/DOCX/TXT files
+  applications/                       # Application tracking records
+  output/
+    output-job-descriptions/          # Parsed/structured job postings (JSON)
+    output-generated-resumes/         # Tailored resume output
 ```
 
 ## File Naming Conventions

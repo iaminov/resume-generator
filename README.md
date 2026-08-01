@@ -35,10 +35,10 @@ Once the project is open in Claude Code, follow these steps in order:
    name. This creates `data/profiles/{slug}/` and sets it active.
 
 2. **Add your existing resumes** — copy every resume you already have (any
-   number, any version) into the new profile's `source-resumes/` directory:
+   number, any version) into the new profile's `input/input-resumes/` directory:
 
    ```
-   data/profiles/{slug}/source-resumes/
+   data/profiles/{slug}/input/input-resumes/
    ```
 
    Both **PDF** and **Word (.docx)** files are supported. There is no required
@@ -47,7 +47,7 @@ Once the project is open in Claude Code, follow these steps in order:
    letters. The richer this collection, the better the resulting profile.
 
 3. **Build the profile** — run `/parse-resumes`. Claude reads and comprehends
-   every file in `source-resumes/` and synthesizes a single `profile.json`
+   every file in `input/input-resumes/` and synthesizes a single `profile.json`
    (the source of truth for all later steps).
 
 4. **Generate tailored resumes** — run `/create-resume` for each job posting.
@@ -61,7 +61,7 @@ Sets up a new person's profile directory with the full folder structure and make
 **Usage:** Run `/profile-create` and provide the person's full name.
 
 **What it does:**
-- Creates `data/profiles/{slug}/` with subdirectories: `source-resumes/`, `applications/`, `job-descriptions/`, `generated-resumes/`
+- Creates `data/profiles/{slug}/` with subdirectories: `input/input-resumes/`, `input/input-job-postings/`, `applications/`, `output/output-job-descriptions/`, `output/output-generated-resumes/`
 - Sets the new profile as active in `data/.active-profile`
 - Tells you where to place resume files
 
@@ -85,9 +85,9 @@ Permanently deletes a person's profile directory and all associated data.
 
 ### `/parse-resumes` - Build Comprehensive Profile
 
-Uses a two-phase AI pipeline to build a comprehensive `profile.json` from all resumes in the active profile's `source-resumes/` directory.
+Uses a two-phase AI pipeline to build a comprehensive `profile.json` from all resumes in the active profile's `input/input-resumes/` directory.
 
-**Usage:** Run `/parse-resumes` in Claude Code. It automatically processes every PDF/DOCX in the active profile's `source-resumes/` directory.
+**Usage:** Run `/parse-resumes` in Claude Code. It automatically processes every PDF/DOCX in the active profile's `input/input-resumes/` directory.
 
 **How it works:**
 1. **Mechanical extraction**: PDFs are read natively by Claude; DOCX files are converted to markdown via `tools/docx_to_md.py`
@@ -109,13 +109,13 @@ Creates an optimized, job-specific resume through the full 5-agent consensus wor
 **Usage:** Run `/create-resume`, then provide a job posting (URL or pasted text).
 
 **What it does:**
-1. Parses the job description and saves it to the active profile's `job-descriptions/`
+1. Parses the job description and saves it to the active profile's `output/output-job-descriptions/`
 2. Runs a gap analysis (strong matches, partial matches, gaps) and presents it before proceeding
 3. Launches the orchestrator agent to manage the consensus process:
    - Resume Expert creates the initial draft
    - All 5 agents review in parallel (max 5 rounds)
    - Each round reports vote status to the user
-4. Generates the final `.docx` resume in the active profile's `generated-resumes/`
+4. Generates the final `.docx` resume in the active profile's `output/output-generated-resumes/`
 5. Creates an application tracking record in the active profile's `applications/`
 6. Presents the result with consensus summary for user approval
 
@@ -134,7 +134,7 @@ Evaluates how well the active profile matches a job posting without generating a
 - Matches each requirement against the profile: MATCH / PARTIAL / GAP
 - Generates a fit report with overall match percentage
 - Provides a recommendation: Apply / Apply with caveats / Do not apply
-- Saves the analysis to the active profile's `job-descriptions/` for reference
+- Saves the analysis to the active profile's `output/output-job-descriptions/` for reference
 
 **Rules:** Honest about gaps. Missing 2+ must-haves generally yields a "Do not apply" recommendation.
 
@@ -235,12 +235,14 @@ data/
   .active-profile              # Active person slug
   profiles/
     {slug}/
-      profile.json             # Comprehensive extracted profile
-      source-resumes/          # Input: PDF/DOCX resume files
-      job-postings/            # Input: job posting PDF/DOCX/TXT files
-      applications/            # JSON: application tracking records
-      job-descriptions/        # JSON: parsed/structured job postings
-      generated-resumes/       # Output: tailored DOCX resumes
+      profile.json                       # Comprehensive extracted profile
+      input/
+        input-resumes/                   # Input: PDF/DOCX resume files
+        input-job-postings/              # Input: job posting PDF/DOCX/TXT files
+      applications/                      # JSON: application tracking records
+      output/
+        output-job-descriptions/         # JSON: parsed/structured job postings
+        output-generated-resumes/        # Output: tailored DOCX resumes
 tools/                         # Shared utility scripts (docx_to_md.py)
 templates/                     # DOCX resume templates (shared)
 schemas/                       # JSON Schema files for data validation (shared)
@@ -259,13 +261,13 @@ schemas/                       # JSON Schema files for data validation (shared)
 |---|---|---|
 | Profile | `profile.json` (in `data/profiles/{slug}/`) | `data/profiles/jane-doe/profile.json` |
 | Application | `{YYYY-MM-DD}_{company}_{role}.json` | `applications/2026-04-12_google_senior-swe.json` |
-| Job description | `{company}_{role}_{YYYY-MM-DD}.json` | `job-descriptions/google_senior-swe_2026-04-12.json` |
-| Generated resume | `{First}_{Last}_{company-slug}_{role-slug}_{YYYY-MM-DD}.docx` | `generated-resumes/Jane_Doe_acme_senior-platform-engineer_2026-05-26.docx` |
+| Job description | `{company}_{role}_{YYYY-MM-DD}.json` | `output/output-job-descriptions/google_senior-swe_2026-04-12.json` |
+| Generated resume | `{First}_{Last}_{company-slug}_{role-slug}_{YYYY-MM-DD}.docx` | `output/output-generated-resumes/Jane_Doe_acme_senior-platform-engineer_2026-05-26.docx` |
 
 ## Data Integrity
 
 - All JSON files are validated against schemas in `schemas/` before writing
-- Every skill and experience entry traces back to a source resume via `source_file` (filename only)
+- Every skill and experience entry traces back to an input resume via `source_file` (filename only)
 - Application status history is append-only
 - Job descriptions are snapshot at parse time (URLs expire)
 - Content is **never fabricated** - all generated resume content must be traceable to parsed source data

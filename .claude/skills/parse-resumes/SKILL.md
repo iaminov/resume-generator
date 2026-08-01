@@ -6,7 +6,7 @@ description: Read all resumes for the active profile, comprehend them as an AI, 
 # Parse Resumes Skill
 
 Build a comprehensive, deduplicated profile by reading and **understanding** every
-resume in the active profile's `source-resumes/` directory. The output `profile.json`
+resume in the active profile's `input/input-resumes/` directory. The output `profile.json`
 becomes the single source of truth for all downstream skills.
 
 ## Architecture: Two-Phase Pipeline
@@ -37,7 +37,7 @@ python3 tools/extract_resumes.py
 ```
 
 This single command:
-- Finds all DOCX and PDF files in the active profile's `source-resumes/`
+- Finds all DOCX and PDF files in the active profile's `input/input-resumes/`
 - Converts every DOCX to a `.md` file in the same directory
 - Returns a JSON manifest listing all files, their types, and any errors
 

@@ -50,8 +50,9 @@ def list_profiles() -> List[Dict[str, Any]]:
                 pass
 
         # Count files in subdirs
-        source_count = len(list((entry / "source-resumes").glob("*"))) if (entry / "source-resumes").exists() else 0
-        source_count -= 1 if (entry / "source-resumes" / ".gitkeep").exists() else 0
+        input_resumes_dir = entry / "input" / "input-resumes"
+        source_count = len(list(input_resumes_dir.glob("*"))) if input_resumes_dir.exists() else 0
+        source_count -= 1 if (input_resumes_dir / ".gitkeep").exists() else 0
         app_count = len(list((entry / "applications").glob("*.json"))) if (entry / "applications").exists() else 0
 
         profiles.append({
@@ -59,7 +60,7 @@ def list_profiles() -> List[Dict[str, Any]]:
             "name": name,
             "active": entry.name == active,
             "has_profile": has_profile,
-            "source_resumes": max(0, source_count),
+            "input_resumes": max(0, source_count),
             "applications": app_count,
         })
 

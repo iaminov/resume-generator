@@ -17,11 +17,11 @@ PROFILES_DIR = DATA_DIR / "profiles"
 ACTIVE_PROFILE_FILE = DATA_DIR / ".active-profile"
 
 SUBDIRS = [
-    "source-resumes",
-    "job-postings",
+    "input/input-resumes",
+    "input/input-job-postings",
     "applications",
-    "job-descriptions",
-    "generated-resumes",
+    "output/output-job-descriptions",
+    "output/output-generated-resumes",
 ]
 
 
@@ -57,7 +57,7 @@ def main():
     profile_dir.mkdir(parents=True, exist_ok=True)
     for subdir in SUBDIRS:
         sub_path = profile_dir / subdir
-        sub_path.mkdir(exist_ok=True)
+        sub_path.mkdir(parents=True, exist_ok=True)
         (sub_path / ".gitkeep").touch()
 
     # Set as active profile

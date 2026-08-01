@@ -21,7 +21,7 @@ resume writing, career coaching, and applicant tracking system (ATS) optimizatio
 
 1. Read the person's full profile from `data/profiles/{slug}/profile.json`
    (the slug is provided by the orchestrator)
-2. Read the job description from `data/profiles/{slug}/job-descriptions/`
+2. Read the job description from `data/profiles/{slug}/output/output-job-descriptions/`
 3. Select the most relevant skills, experience, and achievements
 4. Structure the resume with:
    - Professional summary tailored to the role (3-4 lines max)

@@ -26,3 +26,6 @@ venv/
 *.tmp
 *.xlsx
 *.docx
+
+.qodo/
+

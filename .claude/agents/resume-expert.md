@@ -74,6 +74,9 @@ Never drop them just because they don't match the target job's industry.
 
 ## Critical Rules
 
+- Follow `.claude/rules/resume-writing.md` for content craft (summary thesis,
+  accomplishments over technology dumps, the depth test, length calibration)
+  and `.claude/rules/resume-formatting.md` for document mechanics
 - NEVER create employment gaps by omitting roles
 - NEVER invent accomplishments, metrics, or experiences not in the profile
 - NEVER use generic filler language ("results-driven professional")

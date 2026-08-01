@@ -92,6 +92,25 @@ python-docx code inline or create new scripts for DOCX generation.
 - `/review-job` — Analyze a job posting and evaluate fit against a profile
 - `/track-application` — Full application lifecycle: status, contacts, interviews, comp, follow-ups, outcome
 
+## Rules
+Detailed rules live in `.claude/rules/` and attach automatically by file path:
+
+| File | Covers |
+|---|---|
+| `data-integrity.md` | Active profile resolution, JSON validation, naming, confidentiality |
+| `resume-writing.md` | Content craft: summary thesis, accomplishments over tech dumps, length, sourcing discipline |
+| `resume-formatting.md` | Document mechanics: fonts, margins, tab stops, section order, ATS structure |
+| `application-tracking.md` | Application record requirements |
+| `user-interaction.md` | When to ask the user and when to just execute |
+
+## Source Attribution (CRITICAL)
+Input files are not automatically the person's own words. Notes folders often
+contain third-party advice, forum threads, and pasted articles whose first-person
+claims belong to strangers. **Verify authorship before recording anything in
+`profile.json` as the person's own statement, credential, or statistic.** Never
+record job-application outcome statistics unless the person states them directly.
+See `.claude/rules/resume-writing.md`.
+
 ## Data Integrity
 - Every profile JSON must validate against `schemas/profile.schema.json`
 - Every application JSON must validate against `schemas/application.schema.json`
@@ -108,7 +127,7 @@ these operations.
 |---|---|---|
 | `tools/docx_to_md.py` | Convert single DOCX to markdown | `python3 tools/docx_to_md.py file.docx` |
 | `tools/extract_resumes.py` | Batch-extract all resumes for a profile | `python3 tools/extract_resumes.py [--slug name]` |
-| `tools/generate_resume.py` | Generate .docx resume from JSON content | `python3 tools/generate_resume.py content.json output.docx` |
+| `tools/generate_resume.py` | Generate .docx resume from JSON content; spacing adapts to fit a page goal | `python3 tools/generate_resume.py content.json output.docx [--target-pages 1] [--density auto\|normal\|compact\|dense]` |
 | `tools/profile_create.py` | Create profile directory structure | `python3 tools/profile_create.py "Full Name" [--slug slug]` |
 | `tools/profile_switch.py` | List profiles or switch active | `python3 tools/profile_switch.py [slug]` |
 | `tools/profile_delete.py` | Delete a profile (dry-run or confirmed) | `python3 tools/profile_delete.py slug [--confirm]` |

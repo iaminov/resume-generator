@@ -9,9 +9,38 @@ paths:
 ## Document Format
 - Output format: .docx (Microsoft Word)
 - Use python-docx for generation
-- Apply consistent fonts: Calibri or Arial, 10-11pt body, 14pt name
+- Apply consistent fonts: Calibri or Arial, 10-11pt body, 18pt name
 - Margins: 0.5-0.75 inches all sides
 - Single column layout (no tables, text boxes, or columns - ATS hostile)
+
+## Adaptive Density
+
+`tools/generate_resume.py` picks spacing to suit the resume in hand rather than
+applying one fixed look. Three presets vary **margins and section spacing only**
+— font sizes never change, because shrinking type to force a fit is what makes a
+resume look crammed:
+
+| Preset | Margins | Use |
+|---|---|---|
+| `normal` | 0.75" | Default. Roomy; right for reference documents and short resumes |
+| `compact` | 0.60" | Middle ground |
+| `dense` | 0.50" | Content-heavy resumes held to a strict page goal |
+
+Selection, in precedence order:
+
+1. `--density` / `--target-pages` on the command line
+2. a `"layout": {"density": ..., "target_pages": ...}` object in the content JSON
+3. automatic — start at `normal` and tighten only to reclaim a trailing page
+   that would hold just a few lines
+
+**Prefer setting `target_pages` over naming a preset.** State the goal and let
+the tool find the loosest spacing that meets it; hardcoding `dense` on a short
+resume just wastes white space.
+
+With a page goal set, the tool renders the document through LibreOffice (when
+installed) to confirm the real page count and tightens further if the estimate
+missed. Without LibreOffice it falls back to the built-in estimator, which runs
+about 10% optimistic — treat its output as a guide, not a guarantee.
 
 ## Date Alignment
 - Dates are right-aligned to the right margin using a **right tab stop**, so

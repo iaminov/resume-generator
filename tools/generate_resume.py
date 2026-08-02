@@ -24,6 +24,10 @@ Selection, in precedence order:
   3. automatic: start at `normal`, and tighten only to reclaim a trailing page
      that would hold just a few lines
 
+Where LibreOffice is installed, both the page goal and the trailing-page check
+are settled by rendering the document rather than by the estimator, which runs
+about 10% optimistic and cannot be trusted to spot a straggler on its own.
+
 JSON input format:
 {
   "name": "Full Name",
@@ -342,12 +346,48 @@ def estimate_pages(data, density):
     return (total / usable_h) * ESTIMATE_CALIBRATION
 
 
-def verify_page_count(docx_path):
-    """Return the true page count of a generated .docx, or None.
+def verify_layout(docx_path):
+    """Return (page_count, last_page_fill) for a generated .docx, or (None, None).
 
-    Converts via LibreOffice when it is installed. Optional by design: the
-    generator must work without it, so callers treat None as "unknown" rather
-    than as an error.
+    `last_page_fill` is the final page's line count as a fraction of the fullest
+    page, so a trailing page holding two lines of a forty-line layout scores
+    about 0.05. Converts via LibreOffice when installed; optional by design, so
+    callers treat None as "unknown" rather than as an error.
+    """
+    pdf_bytes = _render_pdf(docx_path)
+    if pdf_bytes is None:
+        return None, None
+    pages = len(re.findall(rb"/Type\s*/Page[^s]", pdf_bytes)) or None
+    if pages is None:
+        return None, None
+    if pages == 1:
+        return 1, 1.0
+
+    try:
+        import io
+
+        import pdfplumber
+
+        with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+            counts = [
+                len((page.extract_text() or "").splitlines()) for page in pdf.pages
+            ]
+    except Exception:
+        return pages, None
+
+    fullest = max(counts) if counts else 0
+    if not fullest:
+        return pages, None
+    return pages, counts[-1] / fullest
+
+
+def _render_pdf(docx_path):
+    """Render a .docx to PDF bytes via LibreOffice, or None if unavailable.
+
+    LibreOffice rather than Word: it runs headless on every platform, needs no
+    licence, and will not block on a modal dialog the way COM automation can.
+    Its layout is very close to Word's but not identical, so a document sitting
+    exactly on a page boundary may still differ by a line.
     """
     soffice = shutil.which("soffice") or shutil.which("libreoffice")
     if soffice is None:
@@ -375,10 +415,12 @@ def verify_page_count(docx_path):
         pdf = Path(tmp) / (docx_path.stem + ".pdf")
         if not pdf.exists():
             return None
-        # Count page objects without requiring a PDF library.
-        blob = pdf.read_bytes()
-        count = len(re.findall(rb"/Type\s*/Page[^s]", blob))
-        return count or None
+        return pdf.read_bytes()
+
+
+def verify_page_count(docx_path):
+    """Return the true page count of a generated .docx, or None if unavailable."""
+    return verify_layout(docx_path)[0]
 
 
 def choose_density(data, target_pages=None, requested="auto"):
@@ -858,7 +900,31 @@ def main():
     layout = data.get("layout") or {}
     target_pages = args.target_pages or layout.get("target_pages")
     requested = args.density or layout.get("density", "auto")
-    actual_pages = verify_page_count(output_path)
+    actual_pages, last_fill = verify_layout(output_path)
+
+    # No page goal: the estimator alone cannot reliably spot a trailing page
+    # holding a few lines, so when a renderer is available, measure the real
+    # fill and tighten while that actually removes a page.
+    if not target_pages and requested == "auto" and actual_pages and last_fill is not None:
+        index = DENSITIES.index(density)
+        while (
+            last_fill <= STRAGGLER_PAGE_FRACTION
+            and actual_pages > 1
+            and index < len(DENSITIES) - 1
+        ):
+            index += 1
+            candidate = DENSITIES[index]
+            generate_resume(data, output_path, args.template, density=candidate)
+            new_pages, new_fill = verify_layout(output_path)
+            if not new_pages or new_pages >= actual_pages:
+                # Tightening did not buy a page; keep the roomier layout.
+                generate_resume(data, output_path, args.template, density=density)
+                break
+            density, actual_pages, last_fill = candidate, new_pages, new_fill
+            note = (
+                f"auto: tightened to '{density.name}' to absorb a trailing page "
+                f"that held only a few lines; now {actual_pages} pages"
+            )
 
     if target_pages and requested == "auto" and actual_pages is not None:
         start = DENSITIES.index(density)
@@ -902,6 +968,7 @@ def main():
             "margin_inches": density.margin_in,
             "estimated_pages": round(estimate_pages(data, density), 2),
             "actual_pages": actual_pages,
+            "last_page_fill": round(last_fill, 2) if last_fill is not None else None,
             "reason": note,
         },
     }

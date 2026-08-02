@@ -37,10 +37,17 @@ Selection, in precedence order:
 the tool find the loosest spacing that meets it; hardcoding `dense` on a short
 resume just wastes white space.
 
-With a page goal set, the tool renders the document through LibreOffice (when
-installed) to confirm the real page count and tightens further if the estimate
-missed. Without LibreOffice it falls back to the built-in estimator, which runs
-about 10% optimistic — treat its output as a guide, not a guarantee.
+When LibreOffice is installed the tool renders the document to settle both
+checks against reality rather than arithmetic:
+
+- with a page goal, it confirms the real count and tightens if the estimate missed
+- with no goal, it measures how full the last page is and tightens while that
+  actually removes a page, so a trailing page holding two lines gets absorbed
+
+Without LibreOffice it falls back to the built-in estimator, which runs about
+10% optimistic — treat its output as a guide, not a guarantee. The estimator
+alone is not reliable enough to catch a straggler: it once put a document at
+4.97 pages when the real render was six, the last holding two lines.
 
 ## Date Alignment
 - Dates are right-aligned to the right margin using a **right tab stop**, so

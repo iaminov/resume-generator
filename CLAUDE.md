@@ -4,13 +4,16 @@
 Multi-agent system that parses resumes, builds skills databases, and generates
 tailored resumes using five specialized agents (Resume Expert, Employer Emulator,
 Recruiter, Bias Auditor, Fact Checker) that collaborate through a consensus-based
-review process (with a 6th orchestrator agent).
+review process (with a 6th orchestrator agent). It also generates tailored cover
+letters through a lighter two-agent workflow.
 
 ## Architecture
 - **Data format**: JSON files for all structured data (profiles, applications, job descriptions)
 - **Resume input**: PDF and Word (.docx) formats in active profile's `input/input-resumes/` directory
 - **Resume output**: Word (.docx) format in active profile's `output/output-generated-resumes/` directory
+- **Cover letter output**: Word (.docx) in active profile's `output/output-cover-letters/` directory
 - **Agent consensus**: 5 agents review each resume, max 5 revision rounds
+- **Cover letter review**: 2 agents only — writer drafts, fact-checker reviews once
 - **Multi-person**: Each person gets their own directory under `data/profiles/` containing all their data
 
 ## Directory Structure
@@ -25,23 +28,35 @@ data/
         input-job-postings/              # Input: job posting PDF/DOCX/TXT files to apply for
           processed/                     # Postings already turned into a resume;
                                           #   move a file back out to reprocess it
+        input-voice-samples/             # OPTIONAL: the person's own writing, used to
+                                          #   match voice in cover letters. Empty is fine —
+                                          #   the letter falls back to a generic voice
       applications/                      # JSON: application tracking records
       output/
         output-job-descriptions/         # JSON: parsed/structured job postings
         output-generated-resumes/        # Output: tailored DOCX resumes
+        output-cover-letters/            # Output: tailored DOCX cover letters
 tools/                         # Shared utility scripts (see Tools section below)
 templates/                     # DOCX resume templates (shared)
 schemas/                       # JSON Schema files for data validation (shared)
 ```
 
 ## Agent System
-Six agents collaborate via orchestrator pattern:
+Seven agents. Resume generation uses six of them via the orchestrator pattern:
 1. **orchestrator** - Coordinates workflow, manages consensus rounds
 2. **resume-expert** - Resume writing specialist, formatting, ATS optimization
 3. **employer-emulator** - Thinks like a hiring manager, evaluates fit
 4. **recruiter** - Independent recruiter perspective, market positioning
 5. **bias-auditor** - Audits for age, gender, ethnicity, disability, and other bias exposure
 6. **fact-checker** - Verifies every claim against profile.json; has veto power on accuracy
+
+Cover letter generation deliberately uses only two:
+7. **cover-letter-writer** - Drafts the letter, optionally matching the person's voice
+
+`fact-checker` then reviews it once, with at most one revision round. A cover
+letter is short, every claim traces to an already-audited profile, and the
+failure mode that matters is fabrication rather than formatting — so full
+consensus would be overhead without benefit.
 
 See `.claude/agents/` for full agent definitions.
 
@@ -88,6 +103,16 @@ relevant subset of the profile's skills and experience for that specific role.
 The final resume is generated via `tools/generate_resume.py` — never write
 python-docx code inline or create new scripts for DOCX generation.
 
+### Phase 3: Generate a cover letter (optional, per job)
+`/create-cover-letter` takes a job posting + the active profile and produces a
+tailored letter. The Cover Letter Writer drafts it and the Fact Checker reviews
+it once. Voice is **optional**: drop the person's own writing into
+`input/input-voice-samples/` to have the letter match how they actually write
+(a past cover letter is best, but any substantial prose they wrote will do), or
+skip it and take a clear generic professional voice. The skill always offers
+both rather than defaulting silently. Samples supply *voice only* — `profile.json`
+remains the sole source of facts. Generated via `tools/generate_cover_letter.py`.
+
 ### Other commands
 - `/review-job` — Analyze a job posting and evaluate fit against a profile
 - `/track-application` — Full application lifecycle: status, contacts, interviews, comp, follow-ups, outcome
@@ -127,6 +152,7 @@ these operations.
 |---|---|---|
 | `tools/docx_to_md.py` | Convert single DOCX to markdown | `python3 tools/docx_to_md.py file.docx` |
 | `tools/extract_resumes.py` | Batch-extract all resumes for a profile | `python3 tools/extract_resumes.py [--slug name]` |
+| `tools/generate_cover_letter.py` | Generate .docx cover letter from JSON content; warns if over one page or 400 words | `python3 tools/generate_cover_letter.py content.json output.docx` |
 | `tools/generate_resume.py` | Generate .docx resume from JSON content; spacing adapts to fit a page goal | `python3 tools/generate_resume.py content.json output.docx [--target-pages 1] [--density auto\|normal\|compact\|dense]` |
 | `tools/profile_create.py` | Create profile directory structure | `python3 tools/profile_create.py "Full Name" [--slug slug]` |
 | `tools/profile_switch.py` | List profiles or switch active | `python3 tools/profile_switch.py [slug]` |

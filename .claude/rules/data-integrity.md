@@ -62,11 +62,31 @@ data/profiles/{slug}/
       processed/                      # Postings already turned into a resume
                                        #   (moved here by /create-resume; move
                                        #   a file back out to reprocess it)
+    input-voice-samples/              # OPTIONAL writing samples for cover-letter
+                                       #   voice matching (see below)
   applications/                       # Application tracking records
   output/
     output-job-descriptions/          # Parsed/structured job postings (JSON)
     output-generated-resumes/         # Tailored resume output
+    output-cover-letters/             # Tailored cover letter output
 ```
+
+## Voice Samples
+
+`input/input-voice-samples/` is optional and may be empty — `/create-cover-letter`
+falls back to a generic professional voice and must always tell the user both
+options exist rather than defaulting silently.
+
+When samples are present:
+
+- They must be the person's **own** writing. Verify authorship before using
+  them, per the Source Attribution rules — a pasted article or forwarded email
+  is not their voice.
+- They supply **voice only, never facts**. Any claim appearing in a sample must
+  still be corroborated by `profile.json` before it can enter a generated
+  document. A past cover letter may well contain claims that were never true.
+- Do not copy sentences from a sample into generated output. Match the manner,
+  not the wording.
 
 ## File Naming Conventions
 

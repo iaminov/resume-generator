@@ -20,10 +20,39 @@ SUBDIRS = [
     "input/input-resumes",
     "input/input-job-postings",
     "input/input-job-postings/processed",
+    "input/input-voice-samples",
     "applications",
     "output/output-job-descriptions",
     "output/output-generated-resumes",
+    "output/output-cover-letters",
 ]
+
+
+VOICE_SAMPLES_README = """# Voice Samples (optional)
+
+Drop your own writing here and `/create-cover-letter` will match how you
+actually write instead of using a generic professional voice.
+
+**This folder is optional.** Leave it empty and cover letters still work — you
+will simply get a clear, neutral default voice.
+
+## What to put here
+
+- A past cover letter is ideal — same format, same register.
+- Anything substantial you wrote also works: a personal statement, a detailed
+  email, a blog post, a long message explaining something you built.
+- PDF, DOCX, TXT, and MD are all readable.
+- One good sample is enough; more is better. Under ~150 words gives a weak
+  signal.
+
+## Two rules
+
+1. **It must be your own writing.** An article you saved or an email someone
+   sent you is not your voice.
+2. **Samples supply voice only, never facts.** Every factual claim in a
+   generated letter is checked against `profile.json`, so a stale or
+   embellished claim in an old letter will not make it through.
+"""
 
 
 def name_to_slug(name: str) -> str:
@@ -60,6 +89,12 @@ def main():
         sub_path = profile_dir / subdir
         sub_path.mkdir(parents=True, exist_ok=True)
         (sub_path / ".gitkeep").touch()
+
+    # The voice-samples folder is optional, so its purpose is not self-evident
+    # from the name alone. Leave a note explaining it rather than an empty dir.
+    (profile_dir / "input" / "input-voice-samples" / "README.md").write_text(
+        VOICE_SAMPLES_README, encoding="utf-8"
+    )
 
     # Set as active profile
     ACTIVE_PROFILE_FILE.write_text(slug, encoding="utf-8")

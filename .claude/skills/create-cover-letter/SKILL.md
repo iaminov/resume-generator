@@ -96,8 +96,13 @@ mode that matters is fabrication rather than formatting. One reviewer is enough.
      ```
    - Do NOT write python-docx code inline or create another script
    - The script reports page count and word count and warns if the letter runs
-     past one page or over 400 words. **Act on those warnings** — cut the
-     letter, do not ignore them.
+     past one page or over 400 words. **Act on those warnings** — cut, do not
+     ignore them.
+   - A letter well under 400 words can still spill by one or two lines, usually
+     just the signature. Before cutting prose the fact-checker has already
+     cleared, remove redundancy in the letterhead — a recipient `title` line
+     duplicating the salutation is the usual culprit. Trim body text only if
+     that is not enough, and never re-add a claim while shortening.
 
 8. **Link it to the application record**:
    - If an application record exists for this company + role in

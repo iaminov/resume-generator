@@ -65,6 +65,19 @@ Ignore the samples' *content* unless it is corroborated by `profile.json` — a
 past cover letter may contain claims that were never verified, and the profile
 remains the single source of truth for facts.
 
+**Clichés are not voice.** If a sample is written in corporate boilerplate —
+"I am writing to express my strong interest", "proven track record", "passionate
+about", "cutting-edge", "dynamic environment" — do not reproduce it. The banned
+patterns below override voice matching, always. Boilerplate is the absence of a
+voice, and much of it comes from a template or a language model rather than the
+person. Match what is genuinely theirs underneath: how long their sentences run,
+how they sequence an argument, which specifics they reach for, how formal they
+are, whether they hedge.
+
+When a sample is mostly boilerplate, say so in your response. Tell the user the
+sample gave a weak voice signal and that you wrote closer to the default voice,
+rather than silently producing another boilerplate letter.
+
 **Generic** — no samples available. Write in a clear, warm, professional voice:
 plain words, active constructions, first person, contractions allowed, no
 corporate register, no superlatives about oneself. Confident and specific
@@ -81,7 +94,13 @@ These mark a letter as machine-written. Never use them:
 - "As you can see from my resume..." (they can read it)
 - Restating the resume line by line
 - Flattery of the company with no specific content
-- Any sentence that would survive unchanged in a letter to a different employer
+- Any **substantive** paragraph that would survive unchanged in a letter to a
+  different employer. Specificity to this employer is the only advantage a
+  letter has over the resume; a transferable paragraph is resume content in
+  prose, which is strictly worse than the resume itself, and reviewers have
+  read that version thousands of times. This test applies to the argument, not
+  to mechanics — salutation, sign-off, and a plain thank-you are meant to be
+  ordinary and should not be varied for its own sake.
 
 ## Output
 

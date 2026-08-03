@@ -1,8 +1,12 @@
 ---
 paths:
   - "data/profiles/*/output/output-generated-resumes/**"
+  - "data/profiles/*/output/output-cover-letters/**"
+  - "data/profiles/*/output/output-job-descriptions/**"
   - ".claude/agents/**"
   - ".claude/skills/create-resume/**"
+  - ".claude/skills/create-cover-letter/**"
+  - ".claude/skills/review-job/**"
 ---
 
 # Resume Writing Principles
@@ -95,6 +99,46 @@ A "Summary of Skills" block of 4–8 short bullets works well for senior
 candidates: time in particular roles, languages, degrees and certifications
 relevant to the target, major achievements, and the tools they have genuine
 command of.
+
+## Gates and Non-Gates
+
+Not every line in a posting filters candidates, and treating them as if they do
+wastes space and invites unnecessary concessions.
+
+- A **gate** is a requirement that screens you out when unmet — no degree, no
+  Python, and the reader stops. These usually sit under "Requirements",
+  "Qualifications", or "You have".
+- A **non-gate** is a differentiator that helps if present and costs nothing if
+  absent. Look for "Exceptional candidates will have", "Nice to have",
+  "Bonus", "Preferred", "It would be great if".
+
+How to use the distinction:
+
+- **Meet a gate → name it in the posting's own words.** This is where exact
+  keyword matching earns its keep, for ATS parsing and for the human skim.
+- **Miss a non-gate → say nothing.** Do not explain, apologise, or pre-empt.
+  Nobody is failing the candidate on it, and raising it spends credibility to
+  buy nothing. Worse, a concession placed next to a strong credential deflates
+  the credential rather than reading as candour.
+- **Miss a gate → concede only if it buys something**, and always **bound the
+  concession**. State what the candidate *has* handled, not merely what they
+  have not; an unbounded admission leaves the reader with no figure to anchor
+  on, and they will assume the worst. "Nothing I have built ran at your volume"
+  invites the reader to imagine your scale, which is the moment you least want
+  them thinking about it.
+
+Naming the limit of one's own claim is a genuine strength and should be
+preserved — but aim it at the *work* ("a user would never report that bug"),
+not at the candidate's *fitness*. Deflation about work reads as confidence;
+deflation about fitness is a verdict the screener will simply accept, since
+they assume the candidate would know.
+
+**Parsing caution.** Requirements written as an OR — "experience in Java,
+Python, or Kotlin" — are a single gate satisfied by any one item. Do not let a
+structured job description split them into separate required skills; that turns
+one satisfied requirement into two phantom gaps and distorts every downstream
+gap analysis. Check `required_skills` against the posting's raw text whenever
+the entries look suspiciously atomic.
 
 ## Length
 

@@ -54,8 +54,18 @@ Generate a tailored, optimized resume through the 5-agent consensus workflow.
 5. **Gap analysis**:
    - Compare profile skills/experience against job requirements
    - Identify: strong matches, partial matches, gaps
+   - **Separate gates from non-gates.** A gap against a hard requirement is not
+     the same as a gap against "Exceptional candidates will have" or
+     "Nice to have". Label them differently — a missing non-gate is not a
+     reason to hesitate, and presenting it as a critical gap can talk the user
+     out of an application they should send. See `.claude/rules/resume-writing.md`.
+   - Watch for requirements written as an OR ("Java, Python, **or** Kotlin") —
+     that is one gate satisfied by any one item, not several. If the parsed
+     job description split it into separate entries, fix the JSON before
+     continuing; otherwise the gap analysis invents shortfalls that do not exist
    - Present gap analysis to user before proceeding
-   - If critical gaps exist, warn the user and ask whether to proceed
+   - If critical gaps exist — gates, not non-gates — warn the user and ask
+     whether to proceed
 
 6. **Launch orchestrator agent**:
    - The orchestrator manages the full consensus workflow

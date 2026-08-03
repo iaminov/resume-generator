@@ -54,6 +54,30 @@ For each file listed in the manifest:
 
 Read every file. Do not skip any.
 
+### 2b. Read the notes folder — as GUIDANCE, not fact
+
+Also read anything in `data/profiles/{slug}/input/input-notes/` (DOCX via
+`tools/docx_to_md.py`, PDF/TXT/MD directly). This folder holds notes, ideas,
+open questions, and feedback from coaches or the internet — material *about*
+the resume rather than *in* it.
+
+Treat it under completely different rules from `input-resumes/`:
+
+- Content from here may inform `extraction_notes.reviewer_guidance` only. It
+  must NEVER become a skill, experience entry, project, certification, or metric.
+- **A first-person claim in a notes file usually belongs to somebody else.** A
+  coach's letter describes the coach's career; a saved article describes
+  strangers. Verify authorship before recording anything as the person's own,
+  and when in doubt, don't.
+- **Never record job-application outcome statistics** from a notes file. This
+  has gone wrong before in this repo: a stranger's numbers were recorded as the
+  profile owner's own and had to be purged.
+- Open questions ("should I drop the internship?") are questions, not decisions.
+  Collect them and surface them in the final report (step 7) rather than
+  answering them silently or treating them as instructions.
+
+If `input-notes/` is empty or missing, skip this step without comment.
+
 ### 3. Comprehend all resumes (Phase B — AI understanding)
 
 Now you have the full text of every resume. Read them all carefully and build
@@ -118,6 +142,12 @@ Write to `data/profiles/{slug}/profile.json`.
 
 ### 7. Report
 
+Include, if `input-notes/` had content:
+- which notes files were read, and that they were treated as guidance only
+- any **open questions** found in them, listed for the user to answer
+- anything in the notes that contradicts the resumes, flagged rather than resolved
+
+
 Present a comprehensive summary:
 ```
 Profile: {Full Name} ({slug})
@@ -146,6 +176,12 @@ Flagged for review:
 - **You are the parser** — do NOT write Python scripts to analyze resume content,
   match patterns, or build the profile. Read the text and use your comprehension.
 - **NEVER invent or assume data** not present in the source resumes
+- **`input-notes/` is guidance, never fact.** Nothing from it may become a
+  skill, experience entry, project, or metric — see
+  `.claude/rules/data-integrity.md`. If a file's category is unclear, treat it
+  as notes; treating guidance as fact is the damaging direction.
+- **Surface unresolved questions** found in notes back to the user in the final
+  report rather than deciding them yourself
 - **Read ALL resumes** — the whole point is comprehensive extraction
 - Preserve exact dates, titles, and company names as written
 - Track `source_file` (filename only) in every extracted record

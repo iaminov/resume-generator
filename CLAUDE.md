@@ -31,6 +31,8 @@ data/
         input-voice-samples/             # OPTIONAL: the person's own writing, used to
                                           #   match voice in cover letters. Empty is fine —
                                           #   the letter falls back to a generic voice
+        input-notes/                     # Notes, ideas, open questions, third-party
+                                          #   feedback. Guidance only, NEVER parsed as fact
       applications/                      # JSON: application tracking records
       output/
         output-job-descriptions/         # JSON: parsed/structured job postings
@@ -129,6 +131,14 @@ Detailed rules live in `.claude/rules/` and attach automatically by file path:
 | `resume-formatting.md` | Document mechanics: fonts, margins, tab stops, section order, ATS structure |
 | `application-tracking.md` | Application record requirements |
 | `user-interaction.md` | When to ask the user and when to just execute |
+
+## Notes vs Resumes (CRITICAL)
+`input/input-resumes/` is parsed as **fact** — its contents become the person's
+own claims in `profile.json`. `input/input-notes/` is parsed as **guidance** —
+notes, ideas, open questions, and feedback from coaches or the internet. Nothing
+from `input-notes/` may become a skill, experience entry, project, or metric. If
+a file's category is unclear it belongs in `input-notes/`; treating guidance as
+fact is the damaging direction. See `.claude/rules/data-integrity.md`.
 
 ## Source Attribution (CRITICAL)
 Input files are not automatically the person's own words. Notes folders often

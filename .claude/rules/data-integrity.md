@@ -68,6 +68,9 @@ data/profiles/{slug}/
                                        #   a file back out to reprocess it)
     input-voice-samples/              # OPTIONAL writing samples for cover-letter
                                        #   voice matching (see below)
+    input-notes/                      # Notes, ideas, open questions, and
+                                       #   third-party feedback ABOUT the resume.
+                                       #   Guidance only, never parsed as fact
   applications/                       # Application tracking records
   output/
     output-job-descriptions/          # Parsed/structured job postings (JSON)
@@ -91,6 +94,29 @@ When samples are present:
   document. A past cover letter may well contain claims that were never true.
 - Do not copy sentences from a sample into generated output. Match the manner,
   not the wording.
+
+## Notes vs Resumes (CRITICAL)
+
+`input/input-resumes/` is parsed as **fact**. Everything in it is treated as a
+record of what the person did and lands in `profile.json` as their own claims.
+
+`input/input-notes/` is parsed as **guidance**. It holds notes, ideas, open
+questions, and feedback from coaches, recruiters, or the internet — material
+*about* the documents rather than *in* them.
+
+- Content from `input-notes/` may inform `extraction_notes.reviewer_guidance`.
+  It must NEVER become a skill, experience entry, project, metric, or any other
+  profile fact.
+- A first-person claim in a notes file usually belongs to somebody else. A
+  coach's letter describes the coach's career; a saved forum thread describes
+  strangers. Never attribute either to the profile owner.
+- Open questions in notes ("should I drop the internship?") are questions, not
+  decisions. Surface them to the user rather than answering them silently.
+- Never record job-application outcome statistics from a notes file. This has
+  gone wrong before: a stranger's numbers were recorded as the profile owner's.
+
+If a file's category is unclear, it belongs in `input-notes/` — treating
+guidance as fact is the damaging direction.
 
 ## File Naming Conventions
 

@@ -58,6 +58,14 @@ Once the project is open in Claude Code, follow these steps in order:
    from, so include everything: old resumes, role-specific variants, even cover
    letters. The richer this collection, the better the resulting profile.
 
+   **Put only actual resumes here.** Everything in this folder is parsed as
+   *fact* — a record of what you did. Notes, ideas, open questions, and feedback
+   from a coach or the internet go in `input/input-notes/` instead, where they
+   are treated as guidance and can never become a claim on your resume. Mixing
+   the two has caused real damage: a saved forum thread was once parsed as
+   personal notes, and a stranger's job-search statistic ended up recorded as
+   the profile owner's own.
+
 3. **Build the profile** — run `/parse-resumes`. Claude reads and comprehends
    every file in `input/input-resumes/` and synthesizes a single `profile.json`
    (the source of truth for all later steps).
@@ -301,6 +309,8 @@ data/
                                           #   of here to force it to be reprocessed
         input-voice-samples/             # OPTIONAL: your own writing, used to match
                                           #   voice in cover letters. Empty is fine
+        input-notes/                     # Notes, ideas, open questions, feedback from
+                                          #   coaches. Guidance only, never parsed as fact
       applications/                      # JSON: application tracking records
       output/
         output-job-descriptions/         # JSON: parsed/structured job postings

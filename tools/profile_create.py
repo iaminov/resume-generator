@@ -17,6 +17,7 @@ SUBDIRS = [
     "input/input-job-postings",
     "input/input-job-postings/processed",
     "input/input-voice-samples",
+    "input/input-notes",
     "applications",
     "output/output-job-descriptions",
     "output/output-generated-resumes",
@@ -48,6 +49,42 @@ will simply get a clear, neutral default voice.
 2. **Samples supply voice only, never facts.** Every factual claim in a
    generated letter is checked against `profile.json`, so a stale or
    embellished claim in an old letter will not make it through.
+"""
+
+
+NOTES_README = """# Notes, ideas, and open questions
+
+Working material about the resume itself — not resume content.
+
+Put here anything that is *about* the documents rather than *in* them:
+
+- Your own notes, ideas, and unresolved questions ("should I drop the
+  internship?", "is two pages fine?")
+- Feedback from coaches, recruiters, friends, or reviewers
+- Advice collected from elsewhere — articles, forum threads, templates
+
+## Why this is separate
+
+`input-resumes/` is parsed as **fact**: everything in it is treated as a record
+of what you did, and lands in `profile.json` as your own claims. Notes are not
+facts. A file saying "change the Acme dates to 'to present'?" is a question you
+asked yourself, not something that happened, and a coach's letter written in the
+first person describes *their* career, not yours.
+
+Mixing the two has caused real damage in this project before: a collection of
+forum advice was parsed as personal notes and a stranger's job-search statistic
+was recorded as the profile owner's own.
+
+## How this folder is used
+
+- `/parse-resumes` reads it, but records what it finds only as **guidance**,
+  under `extraction_notes.reviewer_guidance` — never as skills, experience,
+  projects, or metrics.
+- No first-person claim from a file here may become a profile fact without you
+  confirming it directly.
+- Open questions are surfaced back to you rather than silently answered.
+
+PDF, DOCX, TXT, and MD are all readable.
 """
 
 
@@ -90,6 +127,9 @@ def main():
     # from the name alone. Leave a note explaining it rather than an empty dir.
     (profile_dir / "input" / "input-voice-samples" / "README.md").write_text(
         VOICE_SAMPLES_README, encoding="utf-8"
+    )
+    (profile_dir / "input" / "input-notes" / "README.md").write_text(
+        NOTES_README, encoding="utf-8"
     )
 
     # Set as active profile

@@ -1,4 +1,8 @@
-python-docx>=1.1.0
-pdfplumber>=0.11.0
-jsonschema>=4.21.0
-Pillow>=10.0.0
+# Pinned to compatible-release ranges: patch and minor updates are allowed, a
+# major bump is not. python-docx in particular decides the default styles every
+# generated document inherits, so an unbounded range can silently change what
+# comes out of the generators.
+python-docx~=1.2
+pdfplumber~=0.11.10
+jsonschema~=4.26
+Pillow~=12.3

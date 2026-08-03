@@ -334,7 +334,7 @@ Deterministic work runs through pre-built scripts rather than generated code.
 | `extract_resumes.py` | Batch-extract every resume for a profile |
 | `generate_resume.py` | Build a .docx resume from JSON; spacing adapts to a page goal |
 | `generate_cover_letter.py` | Build a .docx cover letter from JSON |
-| `layout.py` | Shared text metrics and page verification (module, not a CLI) |
+| `layout.py` | Shared text metrics, template loading, page verification (module, not a CLI) |
 | `validate.py` | Validate profile/application/job-description JSON against the schemas |
 | `common.py` | Shared paths and active-profile helpers (module, not a CLI) |
 | `profile_create.py` / `profile_switch.py` / `profile_delete.py` | Profile management |
@@ -356,6 +356,18 @@ the loosest spacing that meets it. With no goal it starts roomy and tightens onl
 to reclaim a trailing page holding a few stray lines. Where LibreOffice is
 installed it confirms the real page count by rendering rather than trusting the
 estimate.
+
+### Templates
+
+Both generators accept `--template`, defaulting to none. `templates/default.docx`
+is a base document carrying the styles — a template supplies **styles, not
+content**, so any body text in one is stripped and reported rather than being
+prepended to your document. It must define `Normal` and `List Bullet`; a .docx
+saved from Word that never used a bulleted list will not have the latter, and
+you will get a clear error saying so.
+
+Edit `templates/default.docx` in Word to change fonts or colours. Spacing still
+comes from the density presets.
 
 ### Validation
 

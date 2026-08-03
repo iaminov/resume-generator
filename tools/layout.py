@@ -21,8 +21,58 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from docx import Document
+
 # Approximate line-height multiplier for Calibri at single spacing.
 LINE_HEIGHT = 1.22
+
+REQUIRED_STYLES = ("Normal", "List Bullet")
+
+
+def open_base_document(template_path=None):
+    """Open a template as the starting document, or a blank one.
+
+    A template supplies STYLES, not content. python-docx opens a .docx whole, so
+    any body content in the template would be prepended to every document
+    generated from it -- silently, and on every run. Strip it.
+
+    Templates are also not interchangeable: the generators reference "List
+    Bullet" by name, and a .docx saved out of Word that never used a bulleted
+    list will not define it. Catch that here with a message that says what to
+    fix, rather than letting a bare KeyError surface later.
+    """
+    if not template_path:
+        return Document(), []
+
+    path = Path(template_path)
+    if not path.exists():
+        raise ValueError(f"template not found: {path}")
+
+    doc = Document(str(path))
+
+    available = {s.name for s in doc.styles}
+    missing = [s for s in REQUIRED_STYLES if s not in available]
+    if missing:
+        raise ValueError(
+            f"template {path.name} is missing required style(s): "
+            f"{', '.join(missing)}. Add them in Word (apply the style once, "
+            f"then delete the text) or start from templates/default.docx."
+        )
+
+    removed = [p.text for p in doc.paragraphs if p.text.strip()]
+    for para in list(doc.paragraphs):
+        para._element.getparent().remove(para._element)
+    for table in list(doc.tables):
+        table._element.getparent().remove(table._element)
+
+    return doc, removed
+
+
+# Which font file the metrics actually resolved to, or None if none was found
+# and the crude character-width heuristic is in use. The estimate is calibrated
+# against Calibri; anything else shifts its accuracy, so this is worth surfacing
+# rather than leaving invisible.
+FONT_SOURCE = None
 
 
 def _font_loader():
@@ -54,6 +104,9 @@ def _font_loader():
                 break
     if not resolved:
         return None
+
+    global FONT_SOURCE
+    FONT_SOURCE = Path(resolved[False]).name if False in resolved else         Path(next(iter(resolved.values()))).name
 
     cache = {}
 
@@ -177,3 +230,16 @@ def _render_pdf(docx_path):
 def verify_page_count(docx_path):
     """Return the true page count of a generated .docx, or None if unavailable."""
     return verify_layout(docx_path)[0]
+
+
+def metrics_source():
+    """Describe how text widths are being measured, for diagnostics.
+
+    Returns the font filename when real metrics are in use, or "heuristic" when
+    no usable font was found and widths fall back to an average-character-width
+    approximation. The calibration constant in generate_resume.py was measured
+    against Calibri, so a different source means a different accuracy.
+    """
+    if _LOAD_FONT is None or FONT_SOURCE is None:
+        return "heuristic"
+    return FONT_SOURCE

@@ -160,6 +160,65 @@ class TestVerificationFallback:
         import generate_resume
         monkeypatch.setattr(layout, "_render_pdf", lambda p: None)
         out = tmp_path / "resume.docx"
-        density, note = generate_resume.generate_resume(short_resume, out)
+        density, note, dropped = generate_resume.generate_resume(short_resume, out)
         assert out.exists() and out.stat().st_size > 0
         assert density.name in generate_resume.DENSITY_BY_NAME
+        assert dropped == []
+
+
+class TestEstimatorAccuracy:
+    """Guard the calibration constant against drift.
+
+    ESTIMATE_CALIBRATION was measured empirically against LibreOffice renders.
+    It cannot be verified without a renderer, so these skip rather than fail on
+    machines that lack one -- which includes CI.
+    """
+
+    def test_metrics_source_is_reported(self):
+        import layout
+        source = layout.metrics_source()
+        assert source == "heuristic" or source.endswith(".ttf")
+
+    def test_heuristic_fallback_still_measures_something(self, monkeypatch):
+        import layout
+        monkeypatch.setattr(layout, "_LOAD_FONT", None)
+        assert layout.text_width_pt("hello", 10) > 0
+        assert layout.wrapped_lines("word " * 100, 10, 200) > 1
+        assert layout.metrics_source() == "heuristic"
+
+    @pytest.mark.parametrize("fixture_name", ["short_resume", "long_resume"])
+    def test_estimate_lands_near_the_real_render(self, request, tmp_path, fixture_name):
+        import layout
+        import generate_resume
+
+        if layout._render_pdf(__file__) is None and not _renderer_available():
+            pytest.skip("no LibreOffice available to verify against")
+
+        data = request.getfixturevalue(fixture_name)
+        density = DENSITY_BY_NAME["normal"]
+        out = tmp_path / "check.docx"
+        generate_resume.generate_resume(data, out, density=density)
+
+        pages, _ = layout.verify_layout(out)
+        if pages is None:
+            pytest.skip("renderer unavailable")
+
+        estimate = estimate_pages(data, density)
+        # The estimate must land within one page of reality. Wider than that and
+        # density selection starts making visibly wrong choices.
+        assert abs(estimate - pages) < 1.0, (
+            f"estimate {estimate:.2f} vs rendered {pages} -- "
+            f"ESTIMATE_CALIBRATION ({ESTIMATE_CALIBRATION}) may need remeasuring"
+        )
+
+
+def _renderer_available():
+    import shutil
+    from pathlib import Path
+    if shutil.which("soffice") or shutil.which("libreoffice"):
+        return True
+    return any(Path(c).exists() for c in (
+        r"C:\Program Files\LibreOffice\program\soffice.exe",
+        r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
+        "/Applications/LibreOffice.app/Contents/MacOS/soffice",
+    ))

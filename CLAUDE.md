@@ -186,6 +186,24 @@ the no-renderer fallback honest.
 **All fixtures are fictional.** The confidentiality rule applies to tests too —
 they are committed, so no real personal data may appear in them.
 
+## Templates
+
+`templates/default.docx` is the base document both generators can start from
+(`--template`). A template supplies **styles, not content**:
+
+- Any body content in it is stripped before generating, and reported in the
+  tool's output. python-docx opens a .docx whole, so leftover text would
+  otherwise be prepended to every document produced from it.
+- It must define `Normal` and `List Bullet`. A .docx saved out of Word that
+  never used a bulleted list will not define `List Bullet`, and the generators
+  reference it by name.
+- A missing template path is an error, not a silent fallback — a typo would
+  otherwise produce an unstyled document with no warning.
+
+To customise the look, edit `templates/default.docx` in Word (fonts, colours,
+bullet glyphs) and pass it with `--template`. Per-run spacing still comes from
+the density presets, which override the template's margins.
+
 ## Dependencies
 Python packages are listed in `requirements.txt`. Install via:
 ```bash

@@ -89,6 +89,8 @@ from docx.oxml import OxmlElement
 
 from layout import (
     LINE_HEIGHT,
+    metrics_source,
+    open_base_document,
     verify_layout,
     verify_page_count,
     wrapped_lines,
@@ -652,10 +654,7 @@ def generate_resume(data, output_path, template_path=None, density=None,
     else:
         note = "density '{}' supplied by caller".format(density.name)
 
-    if template_path and Path(template_path).exists():
-        doc = Document(template_path)
-    else:
-        doc = Document()
+    doc, dropped_from_template = open_base_document(template_path)
 
     # Margins
     for section in doc.sections:
@@ -685,7 +684,7 @@ def generate_resume(data, output_path, template_path=None, density=None,
     build_awards(doc, data, density)
 
     doc.save(str(output_path))
-    return density, note
+    return density, note, dropped_from_template
 
 
 def main():
@@ -728,7 +727,7 @@ def main():
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     try:
-        density, note = generate_resume(
+        density, note, dropped = generate_resume(
             data,
             output_path,
             args.template,
@@ -776,7 +775,7 @@ def main():
         while actual_pages > target_pages and start < len(DENSITIES) - 1:
             start += 1
             density = DENSITIES[start]
-            density, note = generate_resume(
+            density, note, _ = generate_resume(
                 data, output_path, args.template, density=density
             )
             note = (
@@ -808,10 +807,12 @@ def main():
         "status": "generated",
         "output": str(output_path),
         "sections": sections_present,
+        "template_content_dropped": dropped,
         "layout": {
             "density": density.name,
             "margin_inches": density.margin_in,
             "estimated_pages": round(estimate_pages(data, density), 2),
+            "metrics_source": metrics_source(),
             "actual_pages": actual_pages,
             "last_page_fill": round(last_fill, 2) if last_fill is not None else None,
             "reason": note,

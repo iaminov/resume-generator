@@ -53,10 +53,10 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 # Shared page verification, so both generators agree on what "one page" means.
 # tools/ is on sys.path when these scripts are run.
 try:
-    from layout import verify_layout
+    from layout import open_base_document, verify_layout
 except ImportError:  # pragma: no cover - only when imported as a module
     sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from layout import verify_layout
+    from layout import open_base_document, verify_layout
 
 
 # Letter formatting. Body runs a point larger than the resume's: a letter is
@@ -156,10 +156,7 @@ def build_body(doc, data):
 
 def generate_cover_letter(data, output_path, template_path=None):
     """Generate the complete .docx cover letter from JSON data."""
-    if template_path and Path(template_path).exists():
-        doc = Document(template_path)
-    else:
-        doc = Document()
+    doc, dropped_from_template = open_base_document(template_path)
 
     for section in doc.sections:
         section.top_margin = MARGIN
@@ -179,6 +176,7 @@ def generate_cover_letter(data, output_path, template_path=None):
     build_body(doc, data)
 
     doc.save(str(output_path))
+    return dropped_from_template
 
 
 def word_count(data):
@@ -217,7 +215,11 @@ def main():
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    generate_cover_letter(data, output_path, args.template)
+    try:
+        dropped = generate_cover_letter(data, output_path, args.template)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
 
     words = word_count(data)
     pages, _ = verify_layout(output_path)
@@ -235,6 +237,7 @@ def main():
     result = {
         "status": "generated",
         "output": str(output_path),
+        "template_content_dropped": dropped,
         "body_paragraphs": len(data.get("body") or []),
         "body_words": words,
         "pages": pages,

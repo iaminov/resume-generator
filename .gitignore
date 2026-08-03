@@ -29,3 +29,6 @@ venv/
 
 .qodo/
 
+
+# Templates are shared assets, not generated output
+!templates/*.docx

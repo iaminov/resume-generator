@@ -336,6 +336,7 @@ Deterministic work runs through pre-built scripts rather than generated code.
 | `generate_cover_letter.py` | Build a .docx cover letter from JSON |
 | `layout.py` | Shared text metrics, template loading, page verification (module, not a CLI) |
 | `validate.py` | Validate profile/application/job-description JSON against the schemas |
+| `application_update.py` | Change an application's status or log activity, with transition validation |
 | `common.py` | Shared paths and active-profile helpers (module, not a CLI) |
 | `profile_create.py` / `profile_switch.py` / `profile_delete.py` | Profile management |
 
@@ -368,6 +369,22 @@ you will get a clear error saying so.
 
 Edit `templates/default.docx` in Word to change fonts or colours. Spacing still
 comes from the density presets.
+
+### Application updates
+
+Status changes go through `application_update.py` rather than hand-editing JSON:
+
+```bash
+python3 tools/application_update.py <record> --show
+python3 tools/application_update.py <record> --status phone_interview --notes "45 min with the hiring manager"
+python3 tools/application_update.py <record> --log "Recruiter emailed to schedule"
+```
+
+It validates the move against a transition graph (so a record cannot skip from
+`draft` to `accepted`, or leave a terminal state, without `--force`), appends to
+`status_history` instead of rewriting it, timestamps every entry, journals the
+change, validates against the schema before and after, and writes atomically.
+`ghosted` is deliberately recoverable — employers do resurface.
 
 ### Validation
 

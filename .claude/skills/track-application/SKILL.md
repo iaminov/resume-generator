@@ -32,12 +32,19 @@ When searching for a specific application (by company name, role, or any keyword
 ### Update status
 User says: "update [company] [role] to [status]"
 1. Find the application in `data/profiles/{slug}/applications/`
-2. Validate the new status is a valid transition
-3. Append to `status_history` with current timestamp
-4. Update the `status` field
-5. Auto-append an `activity_log` entry for the status change
-6. Ask for optional notes
-7. Save and confirm
+2. Ask for optional notes
+3. Run `python3 tools/application_update.py <record> --status <new> [--notes "..."]`
+4. Report the result, including the `valid_next` statuses it returns
+
+**Do not hand-edit the JSON for a status change.** The tool validates the
+transition against a defined graph, appends to `status_history` rather than
+rewriting it, timestamps the entry, journals the change to `activity_log`,
+validates against the schema before and after, and writes atomically.
+
+- To see where a record can go: `--show`
+- If the tool refuses a transition, it is because the move skips a stage or
+  leaves a terminal state. Surface that to the user. Only pass `--force` when
+  they confirm it really happened — it records a warning in the output.
 
 ### Add contact
 User says: "add contact [name] for [company]" or "met [name] at [company]"
@@ -58,6 +65,10 @@ User says: "log interview for [company]" or "had [type] interview at [company]"
 7. Save and confirm
 
 ### Add note / log activity
+
+Use `python3 tools/application_update.py <record> --log "what happened"` rather
+than editing `activity_log` by hand; it timestamps the entry and revalidates.
+
 User says: "note for [company]: ..." or "log: recruiter emailed about next steps"
 1. Find the application
 2. Append to `activity_log` with timestamp and the user's text

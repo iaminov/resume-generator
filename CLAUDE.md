@@ -13,7 +13,7 @@ letters through a lighter two-agent workflow.
 - **Resume output**: Word (.docx) format in active profile's `output/output-generated-resumes/` directory
 - **Cover letter output**: Word (.docx) in active profile's `output/output-cover-letters/` directory
 - **Agent consensus**: 5 agents review each resume, max 5 revision rounds
-- **Cover letter review**: 2 agents only — writer drafts, fact-checker reviews once
+- **Cover letter review**: 3 agents — writer drafts, fact-checker and employer-emulator review once in parallel
 - **Multi-person**: Each person gets their own directory under `data/profiles/` containing all their data
 
 ## Directory Structure
@@ -50,13 +50,15 @@ Seven agents. Resume generation uses six of them via the orchestrator pattern:
 5. **bias-auditor** - Audits for age, gender, ethnicity, disability, and other bias exposure
 6. **fact-checker** - Verifies every claim against profile.json; has veto power on accuracy
 
-Cover letter generation deliberately uses only two:
+Cover letter generation uses three:
 7. **cover-letter-writer** - Drafts the letter, optionally matching the person's voice
 
-`fact-checker` then reviews it once, with at most one revision round. A cover
-letter is short, every claim traces to an already-audited profile, and the
-failure mode that matters is fabrication rather than formatting — so full
-consensus would be overhead without benefit.
+`fact-checker` and `employer-emulator` then review it once in parallel, with at
+most one revision round. Only the fact-checker can block; the emulator advises.
+Two reviewers cover the failure modes that matter for a letter — fabrication,
+and failing to persuade — and no more are added on purpose: consensus sands
+prose toward the safe middle, and sounding like a specific person is the only
+advantage a cover letter has over the resume.
 
 See `.claude/agents/` for full agent definitions.
 

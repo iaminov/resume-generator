@@ -1,16 +1,18 @@
 ---
 name: create-cover-letter
-description: Generate a tailored cover letter for a specific job posting, optionally matching the person's own writing voice, reviewed by a single fact-checking agent
+description: Generate a tailored cover letter for a specific job posting, optionally matching the person's own writing voice, reviewed once by a fact-checker and a hiring-manager emulator
 ---
 
 # Create Cover Letter Skill
 
-Generate a tailored cover letter through a two-agent workflow: the Cover Letter
-Writer drafts it, and the Fact Checker reviews it once.
+Generate a tailored cover letter through a three-agent workflow: the Cover Letter
+Writer drafts it, then the Fact Checker and Employer Emulator review it once in
+parallel, with at most one revision round.
 
-This is deliberately lighter than `/create-resume`. A cover letter is short,
-every claim traces to a profile that has already been audited, and the failure
-mode that matters is fabrication rather than formatting. One reviewer is enough.
+This is deliberately lighter than `/create-resume`. A cover letter is short and
+every claim traces to a profile that has already been audited, so a five-agent
+consensus is overhead. Two reviewers cover the failure modes that matter:
+fabrication, and failing to persuade.
 
 ## Steps
 
@@ -78,14 +80,37 @@ mode that matters is fabrication rather than formatting. One reviewer is enough.
    It returns the letter as JSON plus a list of every factual claim with its
    `profile.json` source.
 
-6. **Review — launch the `fact-checker` agent, once**:
-   Give it the drafted letter, the claim list, and `profile.json`. It verifies
-   every factual claim and flags anything unsupported, exaggerated, or
-   fabricated. It has veto power on accuracy.
-   - If it approves, continue to step 7.
-   - If it rejects, hand its findings back to `cover-letter-writer` for ONE
-     revision, then accept the result. Do not loop further — if problems
-     remain after one revision, surface them to the user instead of iterating.
+6. **Review — launch two agents IN PARALLEL, once each**:
+
+   The two reviewers cover orthogonal failure modes: one guards truth, the
+   other guards impact. That is the whole space for a document this short.
+   Do not add `recruiter` or `bias-auditor` — market positioning is irrelevant
+   to a letter, and a letter drawn from an already-audited profile gives the
+   bias auditor almost nothing to find.
+
+   **`fact-checker`** — give it the letter, the writer's claim list, and
+   `profile.json`. It verifies every factual claim and flags anything
+   unsupported, exaggerated, or fabricated. **Veto power on accuracy.**
+
+   **`employer-emulator`** — give it the letter and the job posting, and tell
+   it to read as the hiring manager for THIS role: would this letter earn a
+   call, and what falls flat? Constrain it explicitly in the prompt:
+   - It reports **what fails to land and why**. It does NOT rewrite or supply
+     replacement prose. The writer keeps authority over wording.
+   - **Voice is not a defect.** Adding reviewers to prose tends to sand a
+     letter toward the safe middle, and sounding like a specific person is the
+     only real asset a cover letter has. Flag substance that does not land, not
+     phrasing that differs from a conventional register.
+   - It must separate **modest phrasing** (keep — understatement reads as
+     confident and credible) from **a buried achievement** (fix — where plain
+     wording hides the scale or difficulty of real work). Only the second is a
+     finding.
+   - No veto. Its findings are advice; `fact-checker` alone can block.
+
+   Then: if neither reports blocking problems, continue to step 7. Otherwise
+   hand both sets of findings back to `cover-letter-writer` for ONE revision
+   and accept the result. Do not loop — if problems remain after one revision,
+   surface them to the user rather than iterating.
 
 7. **Generate the .docx**:
    - Write the final content as JSON matching the input format documented in
@@ -116,12 +141,18 @@ mode that matters is fabrication rather than formatting. One reviewer is enough.
    - Show the letter text
    - Report the voice mode used and, if matched, which samples
    - Report the fact-checker's verdict and any residual concerns
+   - Report the employer-emulator's read: would it earn a call, and what it
+     flagged. Say explicitly which of its suggestions were declined and why —
+     a note kept for voice reasons is a decision the user should see, not a
+     silent omission
    - Show word count and page count
    - Ask for approval or changes
 
 ## Critical Rules
-- Exactly two agents: `cover-letter-writer` drafts, `fact-checker` reviews once,
-  with at most one revision round
+- Exactly three agents: `cover-letter-writer` drafts; `fact-checker` and
+  `employer-emulator` review once, in parallel; at most one revision round.
+  Do not add further reviewers — consensus sands prose toward the safe middle,
+  and voice is the only advantage a letter has over the resume
 - Never fabricate a fact, a metric, or a stated affinity for the company
 - Voice samples supply voice only — `profile.json` remains the source of facts
 - Never write a letter longer than one page

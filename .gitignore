@@ -37,3 +37,8 @@ venv/
 *.egg-info/
 build/
 dist/
+
+
+.github/
+.pytest_cache/
+.ruff_cache/

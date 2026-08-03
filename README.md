@@ -72,7 +72,12 @@ Once the project is open in Claude Code, follow these steps in order:
 
 4. **Generate tailored resumes** — run `/create-resume` for each job posting.
 
-5. **Optionally add a cover letter** — run `/create-cover-letter`. If you want it
+5. **Optionally restyle the output** — the generators produce properly formatted
+   documents with no setup. If you want your own fonts or colours, copy
+   `templates/default.docx`, edit it in Word, and pass it with `--template`.
+   See [Templates](#templates--using-your-own).
+
+6. **Optionally add a cover letter** — run `/create-cover-letter`. If you want it
    to sound like you rather than like a template, drop a writing sample into
    `data/profiles/{slug}/input/input-voice-samples/` first. A past cover letter
    works, but anything substantial you actually wrote is better — a detailed
@@ -318,7 +323,8 @@ data/
         output-cover-letters/            # Output: tailored DOCX cover letters
 tools/                         # Shared scripts (see below)
 tests/                         # pytest suite; fixtures are fictional by policy
-templates/                     # DOCX templates (shared)
+templates/                     # DOCX style templates. default.docx ships with the
+                               #   repo; drop your own here and pass --template
 schemas/                       # JSON Schema files for data validation (shared)
 .claude/
   agents/                      # Agent definitions (orchestrator, resume-expert,
@@ -370,17 +376,37 @@ to reclaim a trailing page holding a few stray lines. Where LibreOffice is
 installed it confirms the real page count by rendering rather than trusting the
 estimate.
 
-### Templates
+### Templates — using your own
 
-Both generators accept `--template`, defaulting to none. `templates/default.docx`
-is a base document carrying the styles — a template supplies **styles, not
-content**, so any body text in one is stripped and reported rather than being
-prepended to your document. It must define `Normal` and `List Bullet`; a .docx
-saved from Word that never used a bulleted list will not have the latter, and
-you will get a clear error saying so.
+You do not need a template. Both generators produce a complete, properly styled
+document on their own, and `--template` defaults to none.
 
-Edit `templates/default.docx` in Word to change fonts or colours. Spacing still
-comes from the density presets.
+**If you want your own look**, put a `.docx` in `templates/` and pass it:
+
+```bash
+python3 tools/generate_resume.py content.json out.docx --template templates/mine.docx
+python3 tools/generate_cover_letter.py letter.json out.docx --template templates/mine.docx
+```
+
+The folder is not enforced — any path works — but `templates/` is where these
+belong, and `.gitignore` has an exception so `.docx` files there are versioned
+rather than treated as generated output.
+
+The easiest way to make one is to copy `templates/default.docx`, open it in
+Word, and change fonts, colours, or bullet glyphs. Two rules:
+
+- **A template supplies styles, not content.** python-docx opens a `.docx`
+  whole, so any body text in it would be prepended to every document you
+  generate. Anything found is stripped and reported rather than silently
+  included — but start from an empty document and you avoid the question.
+- **It must define `Normal` and `List Bullet`.** A `.docx` saved out of Word
+  that never used a bulleted list will not define `List Bullet`, and the
+  generators reference it by name. You will get a clear error naming the
+  missing style rather than a crash.
+
+A path that does not exist is an error, not a silent fallback — a typo would
+otherwise produce an unstyled document with no warning. Page spacing always
+comes from the density presets, which override the template's margins.
 
 ### Application updates
 

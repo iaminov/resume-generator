@@ -243,9 +243,17 @@ they are committed, so no real personal data may appear in them.
 - A missing template path is an error, not a silent fallback — a typo would
   otherwise produce an unstyled document with no warning.
 
-To customise the look, edit `templates/default.docx` in Word (fonts, colours,
-bullet glyphs) and pass it with `--template`. Per-run spacing still comes from
-the density presets, which override the template's margins.
+Templates are **optional** — both generators produce a complete, correctly
+styled document without one, and `--template` defaults to none.
+
+A user supplying their own puts a `.docx` in `templates/` and passes
+`--template templates/theirs.docx`. Any path works, but `templates/` is the
+convention and `.gitignore` has an exception so `.docx` files there are
+versioned rather than treated as generated output. The easiest starting point
+is a copy of `templates/default.docx`.
+
+Per-run spacing still comes from the density presets, which override the
+template's margins.
 
 ## Dependencies
 Runtime packages are pinned in `requirements.txt` and mirrored in

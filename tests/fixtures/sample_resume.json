@@ -1,0 +1,62 @@
+{
+  "name": "Jane Doe",
+  "layout": {
+    "density": "auto",
+    "target_pages": 1
+  },
+  "contact": {
+    "email": "jane@example.com",
+    "phone": "(555) 010-0100",
+    "location": "Springfield",
+    "linkedin": "linkedin.com/in/example"
+  },
+  "summary": "Backend engineer who builds Python services and the infrastructure under them.",
+  "skills": [
+    {
+      "category": "Languages",
+      "items": [
+        "Python",
+        "Go",
+        "SQL"
+      ]
+    },
+    {
+      "category": "Infrastructure",
+      "items": [
+        "Docker",
+        "Terraform",
+        "PostgreSQL"
+      ]
+    }
+  ],
+  "experience": [
+    {
+      "title": "Senior Software Engineer",
+      "company": "Acme Corp",
+      "location": "Springfield",
+      "dates": "2021 - Present",
+      "bullets": [
+        "Built and owned a payments service, taking it from design to production.",
+        "Cut median request latency by rewriting the hot path around a batched query."
+      ]
+    },
+    {
+      "title": "Software Engineer",
+      "company": "Initech",
+      "location": "Springfield",
+      "dates": "2019 - 2021",
+      "bullets": [
+        "Maintained an internal reporting pipeline used across three teams."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. Computer Science",
+      "institution": "State University",
+      "details": [
+        "GPA: 3.7"
+      ]
+    }
+  ]
+}

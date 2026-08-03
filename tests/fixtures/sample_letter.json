@@ -1,0 +1,19 @@
+{
+  "name": "Jane Doe",
+  "contact": {
+    "email": "jane@example.com",
+    "location": "Springfield"
+  },
+  "date": "January 1, 2030",
+  "recipient": {
+    "company": "Acme Corp",
+    "location": "Springfield"
+  },
+  "salutation": "Dear Hiring Manager,",
+  "body": [
+    "I am applying for the Backend Engineer role. I spent the last two years building the payments service my team runs on, which is the problem your posting describes.",
+    "Thank you for your time."
+  ],
+  "closing": "Sincerely,",
+  "signature": "Jane Doe"
+}

@@ -159,12 +159,32 @@ these operations.
 | `tools/profile_create.py` | Create profile directory structure | `python3 tools/profile_create.py "Full Name" [--slug slug]` |
 | `tools/profile_switch.py` | List profiles or switch active | `python3 tools/profile_switch.py [slug]` |
 | `tools/profile_delete.py` | Delete a profile (dry-run or confirmed) | `python3 tools/profile_delete.py slug [--confirm]` |
+| `tools/validate.py` | Validate profile/application/job-description JSON against the schemas | `python3 tools/validate.py <file>` or `--all` |
 
-`tools/common.py` is a shared module, not a CLI. It holds the four project
-paths and the active-profile helpers (`get_active_slug`, `set_active_slug`,
-`profile_dir`), so the layout is defined once and the active-profile convention
-from `.claude/rules/data-integrity.md` is enforced identically everywhere. New
-tools should import from it rather than recomputing `PROJECT_ROOT`.
+Two modules in `tools/` are shared code rather than CLIs:
+
+- **`common.py`** — the four project paths and the active-profile helpers
+  (`get_active_slug`, `set_active_slug`, `profile_dir`). The layout is defined
+  once and the active-profile convention from `.claude/rules/data-integrity.md`
+  is enforced identically everywhere. New tools should import from it rather
+  than recomputing `PROJECT_ROOT`.
+- **`layout.py`** — text metrics (`wrapped_lines`, `text_width_pt`) and page
+  verification (`verify_layout`, `verify_page_count`). Both generators use it,
+  so neither has to import the other.
+
+## Tests
+
+```bash
+pip install -r requirements-dev.txt && pytest
+```
+
+Covers text metrics, page estimation and density selection, slug generation,
+active-profile semantics, and schema validation. CI runs them on Python 3.10 and
+3.13 and also exercises the generators on a runner without LibreOffice, keeping
+the no-renderer fallback honest.
+
+**All fixtures are fictional.** The confidentiality rule applies to tests too —
+they are committed, so no real personal data may appear in them.
 
 ## Dependencies
 Python packages are listed in `requirements.txt`. Install via:

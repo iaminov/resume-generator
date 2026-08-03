@@ -1,0 +1,19 @@
+{
+  "company": "Acme Corp",
+  "title": "Backend Engineer",
+  "location": "Springfield",
+  "captured_date": "2030-01-01",
+  "required_skills": [
+    {
+      "skill": "Python"
+    },
+    {
+      "skill": "Relational databases"
+    }
+  ],
+  "preferred_skills": [
+    {
+      "skill": "Go"
+    }
+  ]
+}

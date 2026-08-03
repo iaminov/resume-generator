@@ -20,8 +20,12 @@ All skills that operate on person data must resolve the active profile first:
 
 - Every JSON file written to `data/profiles/` MUST validate against its
   corresponding schema in `schemas/` before being saved
-- Use `jsonschema` to validate. If validation fails, fix the data, do not
-  skip validation
+- Validate with `python3 tools/validate.py <file>`. It infers the schema from
+  the file's location, reports the exact JSON path at fault, and exits non-zero
+  so it can gate a workflow. `--all` checks every profile in one pass.
+- If validation fails, fix the data. Do not skip validation, and do not
+  hand-roll a one-off check — a forgotten check is how an invalid profile gets
+  written in the first place
 - Never write partial or malformed JSON files
 
 ## Profile Data
@@ -95,6 +99,26 @@ When samples are present:
 - Job descriptions: `{company-slug}_{role-slug}_{YYYY-MM-DD}.json`
 - Generated resumes: `{First}_{Last}_{company-slug}_{role-slug}_{YYYY-MM-DD}.docx`
   (e.g., `Jane_Doe_acme_senior-platform-engineer_2026-05-26.docx`)
+- Generated cover letters: same stem plus `_cover-letter.docx`
+  (e.g., `Jane_Doe_acme_senior-platform-engineer_2026-05-26_cover-letter.docx`)
+
+## Content Sidecars
+
+Every generated .docx MUST be saved alongside the JSON it was built from, named
+`{same-stem}.content.json`:
+
+```
+Jane_Doe_acme_senior-platform-engineer_2026-05-26.docx
+Jane_Doe_acme_senior-platform-engineer_2026-05-26.content.json
+```
+
+A .docx cannot be read back into structured content, so without the sidecar even
+a one-line change means regenerating the whole document from the profile and
+re-running the agent workflow. With it, a revision is an edit plus one command.
+
+The sidecar is also where per-document layout preferences live — the `layout`
+block (`density`, `target_pages`) that `tools/generate_resume.py` reads. Losing
+it loses the page target the document was tuned to.
 
 ### Company Slug Rules
 

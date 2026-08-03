@@ -108,7 +108,9 @@ Structure everything into a JSON object that validates against
 - Experience needs: company, title, dates, bullets, skills_used, source_file
 - Use ISO 8601 dates (YYYY-MM or YYYY-MM-DD)
 
-Validate against the schema using jsonschema. Fix any issues before saving.
+Validate with `python3 tools/validate.py data/profiles/{slug}/profile.json`.
+It exits non-zero and reports the exact JSON path at fault. Fix the data and
+re-run — never leave an invalid profile.json in place.
 
 ### 6. Save
 

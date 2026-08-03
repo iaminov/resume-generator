@@ -77,11 +77,7 @@ Sections with empty/missing data are skipped automatically.
 import argparse
 import json
 import math
-import re
-import shutil
-import subprocess
 import sys
-import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -90,6 +86,13 @@ from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
+
+from layout import (
+    LINE_HEIGHT,
+    verify_layout,
+    verify_page_count,
+    wrapped_lines,
+)
 
 
 # Formatting constants (from resume-formatting.md)
@@ -109,8 +112,6 @@ BORDER_COLOR = "999999"
 PAGE_WIDTH_IN = 8.5
 PAGE_HEIGHT_IN = 11.0
 
-# Approximate line-height multiplier for Calibri at single spacing.
-LINE_HEIGHT = 1.22
 # Left indent applied by the "List Bullet" style, in points.
 BULLET_INDENT_PT = 18.0
 
@@ -160,89 +161,10 @@ STRAGGLER_PAGE_FRACTION = 0.15
 # --------------------------------------------------------------------------
 # Height estimation
 #
-# python-docx cannot paginate -- Word and LibreOffice decide line breaks at
-# render time. To choose a density before writing the file, estimate rendered
-# height by wrapping each run of text against the usable page width using real
-# font metrics. The estimate only ever picks between presets; it never alters
-# content.
+# Walk the resume structure and sum the height of everything in it, using the
+# text metrics in layout.py. The estimate only ever picks between density
+# presets; it never alters content.
 # --------------------------------------------------------------------------
-
-def _font_loader():
-    """Return a callable (size_pt, bold) -> PIL font, or None if unavailable."""
-    try:
-        from PIL import ImageFont
-    except ImportError:
-        return None
-
-    candidates = {
-        False: ["calibri.ttf", "Calibri.ttf", "arial.ttf", "DejaVuSans.ttf"],
-        True: ["calibrib.ttf", "Calibrib.ttf", "arialbd.ttf", "DejaVuSans-Bold.ttf"],
-    }
-    search_dirs = [
-        Path('C:\\Windows\\Fonts'),
-        Path("/usr/share/fonts/truetype/dejavu"),
-        Path("/Library/Fonts"),
-        Path("/System/Library/Fonts/Supplemental"),
-    ]
-    resolved = {}
-    for bold, names in candidates.items():
-        for directory in search_dirs:
-            for name in names:
-                candidate = directory / name
-                if candidate.exists():
-                    resolved[bold] = str(candidate)
-                    break
-            if bold in resolved:
-                break
-    if not resolved:
-        return None
-
-    cache = {}
-
-    def load(size_pt, bold=False):
-        path = resolved.get(bold) or next(iter(resolved.values()))
-        # Render at 4x for sub-point metric precision, then scale back.
-        key = (path, round(size_pt * 4))
-        if key not in cache:
-            try:
-                cache[key] = ImageFont.truetype(path, int(size_pt * 4))
-            except OSError:
-                return None
-        return cache[key]
-
-    return load
-
-
-_LOAD_FONT = _font_loader()
-
-
-def _text_width_pt(text, size_pt, bold=False):
-    """Width of `text` in points, via font metrics when available."""
-    if _LOAD_FONT is not None:
-        font = _LOAD_FONT(size_pt, bold)
-        if font is not None:
-            return font.getlength(text) / 4.0
-    # Fallback: Calibri averages roughly 0.48 em per character in prose.
-    return len(text) * size_pt * 0.48
-
-
-def _wrapped_lines(text, size_pt, avail_pt, bold=False, indent_pt=0.0):
-    """Number of rendered lines `text` occupies, by greedy word wrap."""
-    avail = max(avail_pt - indent_pt, 1.0)
-    words = text.split()
-    if not words:
-        return 1
-    space = _text_width_pt(" ", size_pt, bold)
-    lines, current = 1, 0.0
-    for word in words:
-        width = _text_width_pt(word, size_pt, bold)
-        if current and current + space + width > avail:
-            lines += 1
-            current = width
-        else:
-            current += (space if current else 0.0) + width
-    return lines
-
 
 def estimate_pages(data, density):
     """Estimate how many pages `data` occupies at `density`.
@@ -265,7 +187,7 @@ def estimate_pages(data, density):
         size_pt = BODY_SIZE.pt if size_pt is None else size_pt
         before = density.block_before if before is None else before
         after = density.block_after if after is None else after
-        lines = _wrapped_lines(text, size_pt, usable_w, bold, indent_pt)
+        lines = wrapped_lines(text, size_pt, usable_w, bold, indent_pt)
         return before + lines * line_h(size_pt) + after
 
     total = 0.0
@@ -344,83 +266,6 @@ def estimate_pages(data, density):
             total += paragraph(" - ".join(p for p in parts if p), after=2)
 
     return (total / usable_h) * ESTIMATE_CALIBRATION
-
-
-def verify_layout(docx_path):
-    """Return (page_count, last_page_fill) for a generated .docx, or (None, None).
-
-    `last_page_fill` is the final page's line count as a fraction of the fullest
-    page, so a trailing page holding two lines of a forty-line layout scores
-    about 0.05. Converts via LibreOffice when installed; optional by design, so
-    callers treat None as "unknown" rather than as an error.
-    """
-    pdf_bytes = _render_pdf(docx_path)
-    if pdf_bytes is None:
-        return None, None
-    pages = len(re.findall(rb"/Type\s*/Page[^s]", pdf_bytes)) or None
-    if pages is None:
-        return None, None
-    if pages == 1:
-        return 1, 1.0
-
-    try:
-        import io
-
-        import pdfplumber
-
-        with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-            counts = [
-                len((page.extract_text() or "").splitlines()) for page in pdf.pages
-            ]
-    except Exception:
-        return pages, None
-
-    fullest = max(counts) if counts else 0
-    if not fullest:
-        return pages, None
-    return pages, counts[-1] / fullest
-
-
-def _render_pdf(docx_path):
-    """Render a .docx to PDF bytes via LibreOffice, or None if unavailable.
-
-    LibreOffice rather than Word: it runs headless on every platform, needs no
-    licence, and will not block on a modal dialog the way COM automation can.
-    Its layout is very close to Word's but not identical, so a document sitting
-    exactly on a page boundary may still differ by a line.
-    """
-    soffice = shutil.which("soffice") or shutil.which("libreoffice")
-    if soffice is None:
-        for candidate in (
-            r"C:\Program Files\LibreOffice\program\soffice.exe",
-            r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
-            "/Applications/LibreOffice.app/Contents/MacOS/soffice",
-        ):
-            if Path(candidate).exists():
-                soffice = candidate
-                break
-    if soffice is None:
-        return None
-
-    docx_path = Path(docx_path)
-    with tempfile.TemporaryDirectory() as tmp:
-        try:
-            subprocess.run(
-                [soffice, "--headless", "--convert-to", "pdf", "--outdir", tmp,
-                 str(docx_path)],
-                check=True, capture_output=True, timeout=120,
-            )
-        except (subprocess.SubprocessError, OSError):
-            return None
-        pdf = Path(tmp) / (docx_path.stem + ".pdf")
-        if not pdf.exists():
-            return None
-        return pdf.read_bytes()
-
-
-def verify_page_count(docx_path):
-    """Return the true page count of a generated .docx, or None if unavailable."""
-    return verify_layout(docx_path)[0]
 
 
 def choose_density(data, target_pages=None, requested="auto"):

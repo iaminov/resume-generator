@@ -50,13 +50,13 @@ from docx import Document
 from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
-# Reuse the resume generator's render-based page check so both tools agree on
-# what "one page" means. tools/ is on sys.path when these scripts are run.
+# Shared page verification, so both generators agree on what "one page" means.
+# tools/ is on sys.path when these scripts are run.
 try:
-    from generate_resume import verify_layout
+    from layout import verify_layout
 except ImportError:  # pragma: no cover - only when imported as a module
     sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from generate_resume import verify_layout
+    from layout import verify_layout
 
 
 # Letter formatting. Body runs a point larger than the resume's: a letter is

@@ -49,7 +49,9 @@ Generate a tailored, optimized resume through the 5-agent consensus workflow.
 
 4. **Save job description**:
    - Save to `data/profiles/{slug}/output/output-job-descriptions/{company}_{role}_{date}.json`
-   - Validate against `schemas/job-description.schema.json`
+   - Validate: `python3 tools/validate.py data/profiles/{slug}/output/output-job-descriptions/<file>.json`
+     It exits non-zero on failure and reports the exact JSON path at fault.
+     Fix the data and re-run; never save a file that does not validate.
 
 5. **Gap analysis**:
    - Compare profile skills/experience against job requirements
@@ -86,9 +88,14 @@ Generate a tailored, optimized resume through the 5-agent consensus workflow.
      pre-built `tools/generate_resume.py`
    - The script applies all formatting from `.claude/rules/resume-formatting.md`
      automatically
+   - **Keep the content JSON.** Save it beside the .docx as
+     `{same-stem}.content.json`. A .docx cannot be edited back into structured
+     data, so without the sidecar any later tweak means rebuilding the whole
+     document from the profile. See `.claude/rules/data-integrity.md`.
 
 8. **Create application record**:
    - Save to `data/profiles/{slug}/applications/{date}_{company}_{role}.json`
+   - Validate it: `python3 tools/validate.py <the record>`
    - Initial status: `draft` (changes to `ready` after user approval)
    - Include all consensus metadata
    - File references within the record are relative to the person's profile

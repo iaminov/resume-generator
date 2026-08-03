@@ -1,6 +1,11 @@
 # Resume AI - Multi-Agent Resume Optimization System
 
-A Claude Code-powered system that parses resumes, builds skills databases, and generates tailored resumes using five specialized AI agents that collaborate through a consensus-based review process (with a 6th orchestrator agent).
+A Claude Code-powered system that parses resumes, builds a structured profile,
+and generates tailored resumes and cover letters.
+
+Resumes go through a consensus review by five specialized agents (coordinated by
+a sixth, the orchestrator). Cover letters use a lighter three-agent path, and can
+be written in your own voice from writing samples you supply.
 
 ## Quick Start
 
@@ -10,6 +15,10 @@ All interaction happens through Claude Code slash commands. No separate installa
 
 - [Claude Code](https://claude.ai/code) CLI installed
 - Python 3.10+
+- **Optional:** [LibreOffice](https://www.libreoffice.org/), used to confirm the
+  real page count of a generated document. Without it the tools fall back to a
+  built-in estimator, which runs about 10% optimistic — everything still works,
+  page fitting is just less exact.
 
 ### Setup
 
@@ -23,6 +32,9 @@ source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Optional: to run the test suite
+pip install -r requirements-dev.txt && pytest
 ```
 
 (Alternatively, use `python` instead of `python3` if the `python3` command is not available.)
@@ -51,6 +63,14 @@ Once the project is open in Claude Code, follow these steps in order:
    (the source of truth for all later steps).
 
 4. **Generate tailored resumes** — run `/create-resume` for each job posting.
+
+5. **Optionally add a cover letter** — run `/create-cover-letter`. If you want it
+   to sound like you rather than like a template, drop a writing sample into
+   `data/profiles/{slug}/input/input-voice-samples/` first. A past cover letter
+   works, but anything substantial you actually wrote is better — a detailed
+   email, a technical explanation, a personal statement. Prose written *without a
+   template in front of you* carries far more of your voice. Skip it entirely and
+   you get a clear, neutral default voice.
 
 ## Commands
 
@@ -123,6 +143,40 @@ Creates an optimized, job-specific resume through the full 5-agent consensus wor
 9. Presents the result with consensus summary for user approval
 
 **Rules:** The consensus process is never skipped. Gap analysis is shown before generation so the user can decide not to apply. Duplicate applications require explicit user confirmation before a second resume is generated.
+
+---
+
+### `/create-cover-letter` - Generate a Tailored Cover Letter
+
+Writes a one-page cover letter for a specific posting, optionally in your own voice.
+
+**Usage:** Run `/create-cover-letter`, then provide a job posting (or reuse one
+already parsed by `/create-resume`).
+
+**What it does:**
+1. Resolves the voice — if `input/input-voice-samples/` has files it matches your
+   writing; if it is empty it **asks** whether you would like to add samples or
+   take the default voice. It never decides for you silently.
+2. Drafts the letter with the `cover-letter-writer` agent, which returns every
+   factual claim alongside the `profile.json` path it came from
+3. Reviews once with two agents in parallel:
+   - **Fact Checker** — verifies every claim; **can block**
+   - **Employer Emulator** — reads as the hiring manager for that role and
+     reports what fails to land; advisory only
+4. Allows at most one revision round, then generates the `.docx` into
+   `output/output-cover-letters/`
+5. Links the letter to the application record if one exists
+
+**Why only three agents:** a cover letter is short, and every claim traces to a
+profile that has already been audited, so full consensus is overhead. Two
+reviewers cover the failure modes that matter — fabrication, and failing to
+persuade. More would be worse, not better: consensus sands prose toward a safe
+middle, and sounding like a specific person is the only real advantage a cover
+letter has over the resume.
+
+**On voice samples:** they supply *voice only, never facts*. Every claim is still
+checked against `profile.json`, so a stale or embellished line in an old letter
+cannot ride into a new one. Samples must be your own writing.
 
 ---
 
@@ -245,21 +299,73 @@ data/
           processed/                     # Postings already turned into a resume by
                                           #   /create-resume; move a file back out
                                           #   of here to force it to be reprocessed
+        input-voice-samples/             # OPTIONAL: your own writing, used to match
+                                          #   voice in cover letters. Empty is fine
       applications/                      # JSON: application tracking records
       output/
         output-job-descriptions/         # JSON: parsed/structured job postings
         output-generated-resumes/        # Output: tailored DOCX resumes
-tools/                         # Shared utility scripts (docx_to_md.py)
-templates/                     # DOCX resume templates (shared)
+        output-cover-letters/            # Output: tailored DOCX cover letters
+tools/                         # Shared scripts (see below)
+tests/                         # pytest suite; fixtures are fictional by policy
+templates/                     # DOCX templates (shared)
 schemas/                       # JSON Schema files for data validation (shared)
 .claude/
   agents/                      # Agent definitions (orchestrator, resume-expert,
                                #   employer-emulator, recruiter, bias-auditor,
-                               #   fact-checker)
+                               #   fact-checker, cover-letter-writer)
+  rules/                       # Standards that attach automatically by file path
+                               #   (data-integrity, resume-writing,
+                               #   resume-formatting, application-tracking,
+                               #   user-interaction)
   skills/                      # Skill definitions (profile-create, profile-switch,
                                #   profile-delete, parse-resumes, create-resume,
-                               #   review-job, track-application)
+                               #   create-cover-letter, review-job,
+                               #   track-application)
 ```
+
+## Tools
+
+Deterministic work runs through pre-built scripts rather than generated code.
+
+| Script | Purpose |
+|---|---|
+| `docx_to_md.py` | Convert a DOCX to markdown |
+| `extract_resumes.py` | Batch-extract every resume for a profile |
+| `generate_resume.py` | Build a .docx resume from JSON; spacing adapts to a page goal |
+| `generate_cover_letter.py` | Build a .docx cover letter from JSON |
+| `layout.py` | Shared text metrics and page verification (module, not a CLI) |
+| `validate.py` | Validate profile/application/job-description JSON against the schemas |
+| `common.py` | Shared paths and active-profile helpers (module, not a CLI) |
+| `profile_create.py` / `profile_switch.py` / `profile_delete.py` | Profile management |
+
+### Page fitting
+
+`generate_resume.py` chooses spacing to suit the document instead of applying one
+fixed look. Three presets — `normal`, `compact`, `dense` — vary margins and
+section spacing only. Font sizes never change, because shrinking type to force a
+fit is exactly what makes a resume look crammed.
+
+```bash
+python3 tools/generate_resume.py content.json out.docx --target-pages 1
+python3 tools/generate_resume.py content.json out.docx --density compact
+```
+
+State a page goal rather than naming a preset where you can; the tool then picks
+the loosest spacing that meets it. With no goal it starts roomy and tightens only
+to reclaim a trailing page holding a few stray lines. Where LibreOffice is
+installed it confirms the real page count by rendering rather than trusting the
+estimate.
+
+### Validation
+
+```bash
+python3 tools/validate.py data/profiles/jane-doe/profile.json
+python3 tools/validate.py --all          # every profile, every covered file
+```
+
+Infers the schema from the file's location, reports the exact JSON path at fault,
+and exits non-zero so it can gate a workflow.
 
 ## File Naming Conventions
 
@@ -269,11 +375,38 @@ schemas/                       # JSON Schema files for data validation (shared)
 | Application | `{YYYY-MM-DD}_{company}_{role}.json` | `applications/2026-04-12_google_senior-swe.json` |
 | Job description | `{company}_{role}_{YYYY-MM-DD}.json` | `output/output-job-descriptions/google_senior-swe_2026-04-12.json` |
 | Generated resume | `{First}_{Last}_{company-slug}_{role-slug}_{YYYY-MM-DD}.docx` | `output/output-generated-resumes/Jane_Doe_acme_senior-platform-engineer_2026-05-26.docx` |
+| Generated cover letter | same stem plus `_cover-letter.docx` | `output/output-cover-letters/Jane_Doe_acme_senior-platform-engineer_2026-05-26_cover-letter.docx` |
+| Content sidecar | `{same-stem}.content.json` | `Jane_Doe_acme_senior-platform-engineer_2026-05-26.content.json` |
+
+Every generated `.docx` is saved next to the JSON it was built from. A `.docx`
+cannot be read back into structured content, so without the sidecar even a
+one-line change means regenerating the document from scratch.
 
 ## Data Integrity
 
-- All JSON files are validated against schemas in `schemas/` before writing
+- All JSON files are validated against schemas in `schemas/` before writing,
+  using `python3 tools/validate.py`
 - Every skill and experience entry traces back to an input resume via `source_file` (filename only)
 - Application status history is append-only
 - Job descriptions are snapshot at parse time (URLs expire)
-- Content is **never fabricated** - all generated resume content must be traceable to parsed source data
+- Content is **never fabricated** - all generated content must be traceable to parsed source data
+- Input files are **not automatically the person's own words**. Notes folders
+  often hold third-party advice and pasted articles whose first-person claims
+  belong to strangers; authorship is verified before anything is recorded as the
+  person's own statement
+
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+Covers the pure functions worth pinning: text metrics, page estimation and
+density selection, slug generation, active-profile semantics, and schema
+validation. CI runs them on Python 3.10 and 3.13, and additionally exercises the
+generators on a runner with no LibreOffice installed, so the fallback path stays
+honest.
+
+All test fixtures are fictional. Per the confidentiality rule, no real personal
+data appears anywhere outside `data/profiles/`, which is gitignored.

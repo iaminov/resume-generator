@@ -71,7 +71,9 @@ fabrication, and failing to persuade.
 
 4. **Save the job description** (if not already saved from a previous run):
    - Save to `output/output-job-descriptions/{company}_{role}_{date}.json`
-   - Validate against `schemas/job-description.schema.json`
+   - Validate: `python3 tools/validate.py data/profiles/{slug}/output/output-job-descriptions/<file>.json`
+     It exits non-zero on failure and reports the exact JSON path at fault.
+     Fix the data and re-run; never save a file that does not validate.
 
 5. **Draft — launch the `cover-letter-writer` agent**:
    Give it: the profile, the parsed job posting, the voice mode (and sample
@@ -120,6 +122,9 @@ fabrication, and failing to persuade.
      python3 tools/generate_cover_letter.py content.json data/profiles/{slug}/output/output-cover-letters/{First}_{Last}_{company-slug}_{role-slug}_{YYYY-MM-DD}_cover-letter.docx
      ```
    - Do NOT write python-docx code inline or create another script
+   - **Keep the content JSON.** Save it beside the .docx as
+     `{same-stem}.content.json` — a .docx cannot be edited back into structured
+     data, and the sidecar is what makes a later revision cheap.
    - The script reports page count and word count and warns if the letter runs
      past one page or over 400 words. **Act on those warnings** — cut, do not
      ignore them.

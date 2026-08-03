@@ -10,7 +10,7 @@ import json
 import re
 import sys
 
-from common import PROFILES_DIR, PROJECT_ROOT, set_active_slug
+from common import PROFILES_DIR, PROJECT_ROOT, SCHEMA_VERSION, set_active_slug
 
 SUBDIRS = [
     "input/input-resumes",
@@ -140,6 +140,7 @@ def main():
         "status": "created",
         "name": args.name,
         "slug": slug,
+        "schema_version": SCHEMA_VERSION,
         "profile_dir": str(profile_dir.relative_to(PROJECT_ROOT)),
         "active": True,
         "subdirs": [str((profile_dir / d).relative_to(PROJECT_ROOT)) for d in SUBDIRS],

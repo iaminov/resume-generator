@@ -193,6 +193,8 @@ def main():
     parser.add_argument("content", help="Path to JSON file with letter content")
     parser.add_argument("output", help="Output .docx file path")
     parser.add_argument("--template", help="Optional .docx template file")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Report what would be produced without writing the .docx")
     args = parser.parse_args()
 
     content_path = Path(args.content)
@@ -212,6 +214,20 @@ def main():
             sys.exit(1)
 
     output_path = Path(args.output)
+
+    if args.dry_run:
+        words = word_count(data)
+        print(json.dumps({
+            "status": "dry_run",
+            "would_write": str(output_path),
+            "exists_already": output_path.exists(),
+            "body_paragraphs": len(data.get("body") or []),
+            "body_words": words,
+            "over_word_guidance": words > 400,
+            "note": "no render performed and nothing written; page count unknown until generated",
+        }, indent=2))
+        return
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     try:

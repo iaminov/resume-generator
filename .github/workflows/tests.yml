@@ -44,3 +44,15 @@ jobs:
 
       - name: Validate the example schemas
         run: python tools/validate.py --schema job-description tests/fixtures/sample_job_description.json
+
+      - name: Dry runs write nothing
+        run: |
+          python tools/generate_resume.py tests/fixtures/sample_resume.json /tmp/never.docx --dry-run
+          python tools/generate_cover_letter.py tests/fixtures/sample_letter.json /tmp/never.docx --dry-run
+          test ! -f /tmp/never.docx
+
+      - name: Package installs and entry points resolve
+        run: |
+          pip install -e .
+          resume-validate --schema job-description tests/fixtures/sample_job_description.json
+          resume-diff tests/fixtures/sample_resume.json tests/fixtures/sample_resume.json

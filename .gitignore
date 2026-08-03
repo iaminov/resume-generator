@@ -32,3 +32,8 @@ venv/
 
 # Templates are shared assets, not generated output
 !templates/*.docx
+
+# Build artifacts
+*.egg-info/
+build/
+dist/

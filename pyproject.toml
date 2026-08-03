@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "resume-ai"
+version = "1.0.0"
+description = "Multi-agent resume and cover letter generator built on Claude Code"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+dependencies = [
+    "python-docx~=1.2",
+    "pdfplumber~=0.11.10",
+    "jsonschema~=4.26",
+    "Pillow~=12.3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest~=9.1", "ruff~=0.14"]
+
+[project.urls]
+Repository = "https://github.com/iaminov/resume-generator"
+
+# The tools are flat modules that import each other as siblings, which is what
+# makes `python3 tools/<script>.py` work without any install step -- the form
+# every skill and rule in this repo uses. Mapping tools/ as the package root
+# keeps that intact while also making the scripts installable.
+[tool.setuptools]
+package-dir = { "" = "tools" }
+py-modules = [
+    "common",
+    "layout",
+    "docx_to_md",
+    "extract_resumes",
+    "generate_resume",
+    "generate_cover_letter",
+    "validate",
+    "diff_content",
+    "application_update",
+    "application_status",
+    "profile_create",
+    "profile_switch",
+    "profile_delete",
+]
+
+[project.scripts]
+resume-generate = "generate_resume:main"
+resume-cover-letter = "generate_cover_letter:main"
+resume-validate = "validate:main"
+resume-diff = "diff_content:main"
+resume-extract = "extract_resumes:main"
+resume-docx-to-md = "docx_to_md:main"
+resume-profile-create = "profile_create:main"
+resume-profile-switch = "profile_switch:main"
+resume-profile-delete = "profile_delete:main"
+resume-application-update = "application_update:main"
+resume-application-status = "application_status:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tools"]
+addopts = "-q"

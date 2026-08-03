@@ -3,7 +3,14 @@
   "title": "Person Profile",
   "description": "Structured skills and experience database for a person, extracted from source resumes",
   "type": "object",
-  "required": ["person_slug", "name", "source_files", "skills", "experience", "last_updated"],
+  "required": [
+    "person_slug",
+    "name",
+    "source_files",
+    "skills",
+    "experience",
+    "last_updated"
+  ],
   "properties": {
     "person_slug": {
       "type": "string",
@@ -12,22 +19,46 @@
     },
     "name": {
       "type": "object",
-      "required": ["full"],
+      "required": [
+        "full"
+      ],
       "properties": {
-        "full": { "type": "string" },
-        "first": { "type": "string" },
-        "last": { "type": "string" }
+        "full": {
+          "type": "string"
+        },
+        "first": {
+          "type": "string"
+        },
+        "last": {
+          "type": "string"
+        }
       }
     },
     "contact": {
       "type": "object",
       "properties": {
-        "email": { "type": "string", "format": "email" },
-        "phone": { "type": "string" },
-        "location": { "type": "string" },
-        "linkedin": { "type": "string", "format": "uri" },
-        "portfolio": { "type": "string", "format": "uri" },
-        "github": { "type": "string", "format": "uri" }
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "linkedin": {
+          "type": "string",
+          "format": "uri"
+        },
+        "portfolio": {
+          "type": "string",
+          "format": "uri"
+        },
+        "github": {
+          "type": "string",
+          "format": "uri"
+        }
       }
     },
     "professional_summary": {
@@ -38,14 +69,26 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["file_path", "parsed_date"],
+        "required": [
+          "file_path",
+          "parsed_date"
+        ],
         "properties": {
           "file_path": {
             "type": "string",
             "description": "Filename within the person's input/input-resumes/ directory (e.g., resume_v1.pdf)"
           },
-          "parsed_date": { "type": "string", "format": "date" },
-          "file_type": { "type": "string", "enum": ["pdf", "docx"] }
+          "parsed_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "file_type": {
+            "type": "string",
+            "enum": [
+              "pdf",
+              "docx"
+            ]
+          }
         }
       },
       "minItems": 1
@@ -54,16 +97,27 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["name", "category", "source_file"],
+        "required": [
+          "name",
+          "category",
+          "source_file"
+        ],
         "properties": {
-          "name": { "type": "string" },
+          "name": {
+            "type": "string"
+          },
           "category": {
             "type": "string",
             "description": "e.g., Programming Language, Framework, Tool, Methodology, Soft Skill, Domain"
           },
           "proficiency": {
             "type": "string",
-            "enum": ["beginner", "intermediate", "advanced", "expert"],
+            "enum": [
+              "beginner",
+              "intermediate",
+              "advanced",
+              "expert"
+            ],
             "description": "Inferred from evidence in resume, not assumed"
           },
           "years_experience": {
@@ -74,7 +128,9 @@
             "type": "string",
             "description": "How this skill was demonstrated in the resume"
           },
-          "source_file": { "type": "string" }
+          "source_file": {
+            "type": "string"
+          }
         }
       }
     },
@@ -82,30 +138,53 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["company", "title", "start_date", "bullets", "source_file"],
+        "required": [
+          "company",
+          "title",
+          "start_date",
+          "bullets",
+          "source_file"
+        ],
         "properties": {
-          "company": { "type": "string" },
-          "title": { "type": "string" },
+          "company": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
           "start_date": {
             "type": "string",
             "description": "ISO 8601: YYYY-MM or YYYY-MM-DD"
           },
           "end_date": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "ISO 8601 or null if current role"
           },
-          "location": { "type": "string" },
-          "is_current": { "type": "boolean" },
+          "location": {
+            "type": "string"
+          },
+          "is_current": {
+            "type": "boolean"
+          },
           "bullets": {
             "type": "array",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string"
+            }
           },
           "skills_used": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Skills demonstrated in this role"
           },
-          "source_file": { "type": "string" }
+          "source_file": {
+            "type": "string"
+          }
         }
       }
     },
@@ -113,19 +192,38 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["institution", "source_file"],
+        "required": [
+          "institution",
+          "source_file"
+        ],
         "properties": {
-          "institution": { "type": "string" },
-          "degree": { "type": "string" },
-          "field_of_study": { "type": "string" },
-          "start_date": { "type": "string" },
-          "end_date": { "type": "string" },
-          "gpa": { "type": "string" },
+          "institution": {
+            "type": "string"
+          },
+          "degree": {
+            "type": "string"
+          },
+          "field_of_study": {
+            "type": "string"
+          },
+          "start_date": {
+            "type": "string"
+          },
+          "end_date": {
+            "type": "string"
+          },
+          "gpa": {
+            "type": "string"
+          },
           "relevant_coursework": {
             "type": "array",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string"
+            }
           },
-          "source_file": { "type": "string" }
+          "source_file": {
+            "type": "string"
+          }
         }
       }
     },
@@ -133,14 +231,32 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["name", "source_file"],
+        "required": [
+          "name",
+          "source_file"
+        ],
         "properties": {
-          "name": { "type": "string" },
-          "issuer": { "type": "string" },
-          "date_obtained": { "type": "string" },
-          "expiration_date": { "type": ["string", "null"] },
-          "credential_id": { "type": "string" },
-          "source_file": { "type": "string" }
+          "name": {
+            "type": "string"
+          },
+          "issuer": {
+            "type": "string"
+          },
+          "date_obtained": {
+            "type": "string"
+          },
+          "expiration_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "credential_id": {
+            "type": "string"
+          },
+          "source_file": {
+            "type": "string"
+          }
         }
       }
     },
@@ -148,17 +264,33 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["name", "source_file"],
+        "required": [
+          "name",
+          "source_file"
+        ],
         "properties": {
-          "name": { "type": "string" },
-          "description": { "type": "string" },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
           "technologies": {
             "type": "array",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string"
+            }
           },
-          "outcomes": { "type": "string" },
-          "url": { "type": "string", "format": "uri" },
-          "source_file": { "type": "string" }
+          "outcomes": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "source_file": {
+            "type": "string"
+          }
         }
       }
     },
@@ -167,11 +299,21 @@
       "items": {
         "type": "object",
         "properties": {
-          "name": { "type": "string" },
-          "issuer": { "type": "string" },
-          "date": { "type": "string" },
-          "description": { "type": "string" },
-          "source_file": { "type": "string" }
+          "name": {
+            "type": "string"
+          },
+          "issuer": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "source_file": {
+            "type": "string"
+          }
         }
       }
     },
@@ -180,17 +322,33 @@
       "items": {
         "type": "object",
         "properties": {
-          "title": { "type": "string" },
-          "publisher": { "type": "string" },
-          "date": { "type": "string" },
-          "url": { "type": "string", "format": "uri" },
-          "source_file": { "type": "string" }
+          "title": {
+            "type": "string"
+          },
+          "publisher": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "source_file": {
+            "type": "string"
+          }
         }
       }
     },
     "last_updated": {
       "type": "string",
       "format": "date-time"
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "description": "Schema version this document was written against, as MAJOR.MINOR. A differing MAJOR means the document predates a breaking change and needs migrating before use."
     }
   }
 }

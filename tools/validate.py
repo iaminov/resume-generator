@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 
 import jsonschema
-from common import PROFILES_DIR, PROJECT_ROOT, relative_to_root
+from common import PROFILES_DIR, PROJECT_ROOT, SCHEMA_VERSION, relative_to_root
 
 SCHEMA_DIR = PROJECT_ROOT / "schemas"
 
@@ -204,6 +204,21 @@ def validate_file(path: Path, schema_name: str = None, strict: bool = False) -> 
             f"({', '.join(SCHEMAS)})"
         )
         return result
+
+    # Version drift is a warning, not a failure: an older document is usually
+    # still readable, and refusing to validate it would block the very fix.
+    declared = data.get("schema_version") if isinstance(data, dict) else None
+    if declared and declared.split(".")[0] != SCHEMA_VERSION.split(".")[0]:
+        result["schema_version_warning"] = (
+            f"document declares schema_version {declared}; this repo is at "
+            f"{SCHEMA_VERSION}. A differing major version means it predates a "
+            f"breaking change and may need migrating."
+        )
+    elif not declared:
+        result["schema_version_warning"] = (
+            f"no schema_version recorded; write \"schema_version\": \"{SCHEMA_VERSION}\" "
+            f"so future breaking changes can be detected"
+        )
 
     validator = jsonschema.Draft7Validator(load_schema(name))
     errors = sorted(validator.iter_errors(data), key=lambda e: list(e.absolute_path))

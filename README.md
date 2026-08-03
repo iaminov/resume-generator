@@ -347,7 +347,8 @@ Deterministic work runs through pre-built scripts rather than generated code.
 | `layout.py` | Shared text metrics, template loading, page verification (module, not a CLI) |
 | `validate.py` | Validate profile/application/job-description JSON against the schemas |
 | `application_update.py` | Change an application's status or log activity, with transition validation |
-| `application_status.py` | Report search state: active, gone quiet, overdue follow-ups, stale documents |
+| `application_status.py` | Report search state; `--analytics` for outcome rates |
+| `diff_content.py` | Compare two generated documents by their content sidecars |
 | `common.py` | Shared paths and active-profile helpers (module, not a CLI) |
 | `profile_create.py` / `profile_switch.py` / `profile_delete.py` | Profile management |
 
@@ -396,6 +397,41 @@ It validates the move against a transition graph (so a record cannot skip from
 `status_history` instead of rewriting it, timestamps every entry, journals the
 change, validates against the schema before and after, and writes atomically.
 `ghosted` is deliberately recoverable — employers do resurface.
+
+### Comparing versions
+
+```bash
+python3 tools/diff_content.py old.content.json new.content.json
+```
+
+Reports what actually changed between two generated documents — summary, skills
+by category, bullets added, removed, or reworded — rather than the wall of
+reflowed lines `git diff` produces on JSON. Small edits are paired as rewordings
+instead of counting as one removal plus one addition.
+
+### Dry runs
+
+```bash
+python3 tools/generate_resume.py content.json out.docx --target-pages 1 --dry-run
+```
+
+Reports the sections, the density it would choose, and the estimated page count
+without writing a file.
+
+### Which profile, and schema versions
+
+Tools resolve the profile in this order: `--slug`, then the `RESUME_AI_PROFILE`
+environment variable, then `data/.active-profile`, then a sole existing profile.
+The environment variable lets one shell pin a profile without touching the
+shared file:
+
+```bash
+RESUME_AI_PROFILE=jane-doe python3 tools/application_status.py
+```
+
+All stored JSON carries a `schema_version`. Validation warns on a missing or
+major-mismatched version rather than failing, so an old document can still be
+read and fixed.
 
 ### Validation
 
@@ -453,10 +489,22 @@ one-line change means regenerating the document from scratch.
   belong to strangers; authorship is verified before anything is recorded as the
   person's own statement
 
+## Installation as a package
+
+The tools run directly with `python3 tools/<script>.py` and need no install —
+that is the form every skill uses. They can also be installed, which puts them
+on PATH:
+
+```bash
+pip install -e ".[dev]"
+resume-validate --all --strict
+resume-application-status --analytics
+```
+
 ## Tests
 
 ```bash
-pip install -r requirements-dev.txt
+pip install -e ".[dev]"    # or: pip install -r requirements-dev.txt
 pytest
 ```
 

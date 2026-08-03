@@ -692,6 +692,10 @@ def main():
              "(overrides layout.density in the JSON).",
     )
     parser.add_argument(
+        "--dry-run", action="store_true",
+        help="Report what would be produced without writing the .docx",
+    )
+    parser.add_argument(
         "--target-pages",
         type=int,
         help="Page goal, e.g. 1 or 2. Auto mode picks the loosest spacing that "
@@ -715,6 +719,39 @@ def main():
         sys.exit(1)
 
     output_path = Path(args.output)
+
+    if args.dry_run:
+        try:
+            layout = data.get("layout") or {}
+            density, note = choose_density(
+                data,
+                args.target_pages or layout.get("target_pages"),
+                args.density or layout.get("density", "auto"),
+            )
+        except ValueError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(1)
+        print(json.dumps({
+            "status": "dry_run",
+            "would_write": str(output_path),
+            "exists_already": output_path.exists(),
+            "sections": [
+                k for k in ["summary", "skills", "experience", "earlier_career",
+                            "education", "certifications", "projects",
+                            "publications", "awards"]
+                if data.get(k)
+            ],
+            "layout": {
+                "density": density.name,
+                "margin_inches": density.margin_in,
+                "estimated_pages": round(estimate_pages(data, density), 2),
+                "metrics_source": metrics_source(),
+                "reason": note,
+            },
+            "note": "estimate only; no render performed and nothing written",
+        }, indent=2))
+        return
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     try:

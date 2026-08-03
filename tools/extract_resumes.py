@@ -12,7 +12,7 @@ import argparse
 import json
 import sys
 
-from common import PROFILES_DIR, PROJECT_ROOT, get_active_slug
+from common import PROFILES_DIR, PROJECT_ROOT, resolve_slug
 
 # Import the docx converter from sibling module
 from docx_to_md import docx_to_md
@@ -23,9 +23,10 @@ def main():
     parser.add_argument("--slug", help="Profile slug (defaults to active profile)")
     args = parser.parse_args()
 
-    slug = args.slug or get_active_slug()
-    if not slug:
-        print("Error: No active profile set. Run profile_switch.py or pass --slug.", file=sys.stderr)
+    try:
+        slug = resolve_slug(args.slug)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
     source_dir = PROFILES_DIR / slug / "input" / "input-resumes"

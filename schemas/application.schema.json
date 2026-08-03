@@ -543,6 +543,11 @@
     "last_updated": {
       "type": "string",
       "format": "date-time"
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "description": "Schema version this document was written against, as MAJOR.MINOR. A differing MAJOR means the document predates a breaking change and needs migrating before use."
     }
   }
 }

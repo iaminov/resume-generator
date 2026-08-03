@@ -171,7 +171,8 @@ these operations.
 | `tools/profile_delete.py` | Delete a profile (dry-run or confirmed) | `python3 tools/profile_delete.py slug [--confirm]` |
 | `tools/validate.py` | Validate JSON against the schemas; `--strict` also checks the data-integrity rules schemas cannot express | `python3 tools/validate.py <file> [--strict]` or `--all` |
 | `tools/application_update.py` | Change an application's status or log activity, with transition validation | `python3 tools/application_update.py <record> --status applied` |
-| `tools/application_status.py` | Report search state: active, gone quiet, overdue follow-ups, stale documents | `python3 tools/application_status.py [--stale-days N] [--json]` |
+| `tools/application_status.py` | Report search state; `--analytics` for outcome rates | `python3 tools/application_status.py [--stale-days N] [--analytics] [--json]` |
+| `tools/diff_content.py` | Compare two generated documents by their content sidecars | `python3 tools/diff_content.py old.content.json new.content.json` |
 
 Two modules in `tools/` are shared code rather than CLIs:
 
@@ -183,6 +184,25 @@ Two modules in `tools/` are shared code rather than CLIs:
 - **`layout.py`** — text metrics (`wrapped_lines`, `text_width_pt`) and page
   verification (`verify_layout`, `verify_page_count`). Both generators use it,
   so neither has to import the other.
+
+## Profile Resolution and Versioning
+
+Every tool resolves which profile to use in this order: an explicit `--slug`,
+then the `RESUME_AI_PROFILE` environment variable, then `data/.active-profile`,
+then a sole existing profile. The environment variable lets one session pin a
+profile without disturbing the shared file, so two sessions can work on
+different people concurrently.
+
+All profile, application, and job-description JSON carries `schema_version`
+(currently `1.0`, defined in `tools/common.py`). `validate.py` warns on a
+missing version or a differing major version rather than failing — refusing to
+validate would block the very edit that fixes it.
+
+## Dry Runs
+
+Both generators accept `--dry-run`, reporting what they would produce (sections,
+chosen density, estimated pages) without writing anything. Use it to check a
+page target before committing to a file.
 
 ## Tests
 

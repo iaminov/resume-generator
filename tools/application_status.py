@@ -25,7 +25,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from common import PROFILES_DIR, get_active_slug, relative_to_root
+from common import PROFILES_DIR, relative_to_root, resolve_slug
 
 # Statuses that need no chasing -- the outcome is already known.
 TERMINAL = {"accepted", "rejected", "withdrawn"}
@@ -163,6 +163,92 @@ def summarise(slug, stale_days=DEFAULT_STALE_DAYS, now=None):
     }
 
 
+def analytics(slug, now=None):
+    """Outcome rates across all applications for this profile.
+
+    Deliberately kept out of the resume pipeline: these numbers describe the
+    search, not the candidate, and .claude/rules/resume-writing.md forbids
+    putting job-application statistics on a resume. They exist to tell the
+    person where their process is leaking.
+    """
+    now = now or datetime.now(timezone.utc)
+    root = PROFILES_DIR / slug
+    if not root.exists():
+        raise ValueError(f"profile not found: {slug}")
+
+    records = []
+    for path in sorted((root / "applications").glob("*.json")):
+        try:
+            records.append(json.loads(path.read_text(encoding="utf-8")))
+        except (json.JSONDecodeError, OSError):
+            continue
+
+    def reached(record, statuses):
+        seen = {h.get("status") for h in record.get("status_history") or []}
+        seen.add(record.get("status"))
+        return bool(seen & statuses)
+
+    INTERVIEW = {"screening", "phone_interview", "technical_interview", "onsite_interview",
+                 "offer", "accepted"}
+    submitted = [r for r in records if reached(r, {"applied"} | INTERVIEW)]
+    interviewed = [r for r in submitted if reached(r, INTERVIEW)]
+    offered = [r for r in submitted if reached(r, {"offer", "accepted"})]
+    rejected = [r for r in submitted if r.get("status") == "rejected"]
+    ghosted = [r for r in submitted if r.get("status") == "ghosted"]
+
+    def first_response_days(record):
+        history = record.get("status_history") or []
+        applied = next((_parse(h["date"]) for h in history if h.get("status") == "applied"), None)
+        after = next(
+            (_parse(h["date"]) for h in history
+             if h.get("status") in INTERVIEW | {"rejected"}), None
+        )
+        return (after - applied).days if applied and after and after >= applied else None
+
+    responses = [d for d in (first_response_days(r) for r in submitted) if d is not None]
+
+    def rate(part, whole):
+        return round(len(part) / len(whole), 3) if whole else None
+
+    by_source = {}
+    for record in submitted:
+        key = record.get("source") or "(unrecorded)"
+        entry = by_source.setdefault(key, {"submitted": 0, "interviewed": 0})
+        entry["submitted"] += 1
+        if reached(record, INTERVIEW):
+            entry["interviewed"] += 1
+
+    return {
+        "profile": slug,
+        "generated": now.strftime("%Y-%m-%d"),
+        "counts": {
+            "records": len(records),
+            "submitted": len(submitted),
+            "interviewed": len(interviewed),
+            "offers": len(offered),
+            "rejected": len(rejected),
+            "ghosted": len(ghosted),
+        },
+        "rates": {
+            "interview_per_submission": rate(interviewed, submitted),
+            "offer_per_submission": rate(offered, submitted),
+            "offer_per_interview": rate(offered, interviewed),
+            "ghosted_per_submission": rate(ghosted, submitted),
+        },
+        "days_to_first_response": {
+            "median": sorted(responses)[len(responses) // 2] if responses else None,
+            "fastest": min(responses) if responses else None,
+            "slowest": max(responses) if responses else None,
+            "sample": len(responses),
+        },
+        "by_source": by_source,
+        "caveat": (
+            "Descriptive only, and small samples say very little. These figures must never "
+            "appear on a resume or in a cover letter -- see .claude/rules/resume-writing.md."
+        ),
+    }
+
+
 def render(summary):
     lines = []
     t = summary["totals"]
@@ -218,15 +304,15 @@ def main():
                         help=f"Days of no movement before an application counts as quiet "
                              f"(default {DEFAULT_STALE_DAYS})")
     parser.add_argument("--json", action="store_true", help="Emit JSON instead of text")
+    parser.add_argument("--analytics", action="store_true",
+                        help="Report outcome rates instead of the status summary")
     args = parser.parse_args()
 
-    slug = args.slug or get_active_slug()
-    if not slug:
-        print("Error: no active profile; pass --slug or run profile_switch.py",
-              file=sys.stderr)
-        sys.exit(1)
-
     try:
+        slug = resolve_slug(args.slug)
+        if args.analytics:
+            print(json.dumps(analytics(slug), indent=2))
+            return
         summary = summarise(slug, args.stale_days)
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)

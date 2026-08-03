@@ -8,21 +8,9 @@ Usage:
 import argparse
 import json
 import sys
-from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import List, Dict, Any
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DATA_DIR = PROJECT_ROOT / "data"
-PROFILES_DIR = DATA_DIR / "profiles"
-ACTIVE_PROFILE_FILE = DATA_DIR / ".active-profile"
-
-
-def get_active_slug() -> Optional[str]:
-    """Read the current active profile slug."""
-    if ACTIVE_PROFILE_FILE.exists():
-        slug = ACTIVE_PROFILE_FILE.read_text(encoding="utf-8").strip()
-        return slug if slug else None
-    return None
+from common import PROFILES_DIR, get_active_slug, set_active_slug
 
 
 def list_profiles() -> List[Dict[str, Any]]:
@@ -92,7 +80,7 @@ def main():
         sys.exit(1)
 
     previous = get_active_slug()
-    ACTIVE_PROFILE_FILE.write_text(args.slug, encoding="utf-8")
+    set_active_slug(args.slug)
 
     result = {
         "status": "switched",

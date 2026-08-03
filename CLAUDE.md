@@ -160,6 +160,12 @@ these operations.
 | `tools/profile_switch.py` | List profiles or switch active | `python3 tools/profile_switch.py [slug]` |
 | `tools/profile_delete.py` | Delete a profile (dry-run or confirmed) | `python3 tools/profile_delete.py slug [--confirm]` |
 
+`tools/common.py` is a shared module, not a CLI. It holds the four project
+paths and the active-profile helpers (`get_active_slug`, `set_active_slug`,
+`profile_dir`), so the layout is defined once and the active-profile convention
+from `.claude/rules/data-integrity.md` is enforced identically everywhere. New
+tools should import from it rather than recomputing `PROJECT_ROOT`.
+
 ## Dependencies
 Python packages are listed in `requirements.txt`. Install via:
 ```bash

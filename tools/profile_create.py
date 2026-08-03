@@ -9,12 +9,8 @@ import argparse
 import json
 import re
 import sys
-from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DATA_DIR = PROJECT_ROOT / "data"
-PROFILES_DIR = DATA_DIR / "profiles"
-ACTIVE_PROFILE_FILE = DATA_DIR / ".active-profile"
+from common import PROFILES_DIR, PROJECT_ROOT, set_active_slug
 
 SUBDIRS = [
     "input/input-resumes",
@@ -97,7 +93,7 @@ def main():
     )
 
     # Set as active profile
-    ACTIVE_PROFILE_FILE.write_text(slug, encoding="utf-8")
+    set_active_slug(slug)
 
     # Output result as JSON for easy parsing by caller
     result = {

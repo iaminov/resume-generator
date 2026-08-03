@@ -11,22 +11,11 @@ Usage:
 import argparse
 import json
 import sys
-from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DATA_DIR = PROJECT_ROOT / "data"
-PROFILES_DIR = DATA_DIR / "profiles"
-ACTIVE_PROFILE_FILE = DATA_DIR / ".active-profile"
+from common import PROFILES_DIR, PROJECT_ROOT, get_active_slug
 
 # Import the docx converter from sibling module
 from docx_to_md import docx_to_md
-
-
-def get_active_slug() -> str | None:
-    if ACTIVE_PROFILE_FILE.exists():
-        slug = ACTIVE_PROFILE_FILE.read_text(encoding="utf-8").strip()
-        return slug if slug else None
-    return None
 
 
 def main():

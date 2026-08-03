@@ -11,17 +11,7 @@ import shutil
 import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DATA_DIR = PROJECT_ROOT / "data"
-PROFILES_DIR = DATA_DIR / "profiles"
-ACTIVE_PROFILE_FILE = DATA_DIR / ".active-profile"
-
-
-def get_active_slug() -> str | None:
-    if ACTIVE_PROFILE_FILE.exists():
-        slug = ACTIVE_PROFILE_FILE.read_text(encoding="utf-8").strip()
-        return slug if slug else None
-    return None
+from common import PROFILES_DIR, get_active_slug, set_active_slug
 
 
 def count_files(directory: Path, pattern: str = "*") -> int:
@@ -76,7 +66,7 @@ def main():
     # Clear active profile if this was it
     active_cleared = False
     if is_active:
-        ACTIVE_PROFILE_FILE.write_text("", encoding="utf-8")
+        set_active_slug("")
         active_cleared = True
 
     result = {

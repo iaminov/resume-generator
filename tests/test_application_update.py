@@ -7,9 +7,8 @@ wrong when a person or a model edits JSON by hand.
 import json
 from datetime import datetime
 
-import pytest
-
 import application_update as au
+import pytest
 
 
 @pytest.fixture

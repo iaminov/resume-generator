@@ -8,12 +8,12 @@ Usage:
 import argparse
 import json
 import sys
-from typing import List, Dict, Any
+from typing import Any
 
 from common import PROFILES_DIR, get_active_slug, set_active_slug
 
 
-def list_profiles() -> List[Dict[str, Any]]:
+def list_profiles() -> list[dict[str, Any]]:
     """List all profile directories with their status."""
     if not PROFILES_DIR.exists():
         return []

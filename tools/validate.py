@@ -18,11 +18,11 @@ the whole document.
 """
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
 import jsonschema
-
 from common import PROFILES_DIR, PROJECT_ROOT, relative_to_root
 
 SCHEMA_DIR = PROJECT_ROOT / "schemas"
@@ -31,6 +31,120 @@ SCHEMAS = {
     "profile": SCHEMA_DIR / "profile.schema.json",
     "application": SCHEMA_DIR / "application.schema.json",
     "job-description": SCHEMA_DIR / "job-description.schema.json",
+}
+
+
+# --------------------------------------------------------------------------
+# Strict checks
+#
+# data-integrity.md states requirements JSON Schema cannot express: every entry
+# traces to a source file, dates are ISO 8601, proficiency is inferred from
+# evidence rather than assumed. A document can satisfy the schema completely and
+# still break all three, so these are checked separately.
+# --------------------------------------------------------------------------
+
+ISO_DATE = re.compile(r"^\d{4}(-\d{2}(-\d{2})?)?$")
+
+
+def _iso_date_problems(entries, label, fields=("start_date", "end_date", "date_obtained")):
+    problems = []
+    for i, entry in enumerate(entries or []):
+        if not isinstance(entry, dict):
+            continue
+        for field in fields:
+            value = entry.get(field)
+            if value in (None, ""):
+                continue
+            if not ISO_DATE.match(str(value)):
+                problems.append({
+                    "path": f"{label}[{i}].{field}",
+                    "message": f"'{value}' is not ISO 8601 (YYYY, YYYY-MM or YYYY-MM-DD)",
+                })
+    return problems
+
+
+def strict_profile_problems(data: dict) -> list:
+    """Requirements from data-integrity.md that the schema cannot enforce."""
+    problems = []
+
+    for label in ("skills", "experience", "education", "certifications", "projects"):
+        for i, entry in enumerate(data.get(label) or []):
+            if not isinstance(entry, dict):
+                continue
+            if not (entry.get("source_file") or "").strip():
+                name = entry.get("name") or entry.get("company") or entry.get("institution") or "?"
+                problems.append({
+                    "path": f"{label}[{i}].source_file",
+                    "message": f"missing source_file (entry: {name!r}) — every entry must "
+                               f"trace to an input resume",
+                })
+            if "/" in str(entry.get("source_file") or "") or "\\" in str(entry.get("source_file") or ""):
+                problems.append({
+                    "path": f"{label}[{i}].source_file",
+                    "message": "source_file must be a bare filename, not a path",
+                })
+
+    problems += _iso_date_problems(data.get("experience"), "experience")
+    problems += _iso_date_problems(data.get("education"), "education")
+    problems += _iso_date_problems(data.get("certifications"), "certifications")
+
+    for i, skill in enumerate(data.get("skills") or []):
+        if not isinstance(skill, dict):
+            continue
+        if skill.get("proficiency") and not (skill.get("evidence") or "").strip():
+            problems.append({
+                "path": f"skills[{i}].evidence",
+                "message": f"skill {skill.get('name')!r} claims proficiency "
+                           f"{skill.get('proficiency')!r} with no evidence — proficiency "
+                           f"must be inferred from evidence, not assumed",
+            })
+
+    for i, exp in enumerate(data.get("experience") or []):
+        if not isinstance(exp, dict):
+            continue
+        if exp.get("is_current") and exp.get("end_date"):
+            problems.append({
+                "path": f"experience[{i}]",
+                "message": "marked is_current but has an end_date",
+            })
+        start, end = exp.get("start_date"), exp.get("end_date")
+        if start and end and str(end) < str(start):
+            problems.append({
+                "path": f"experience[{i}]",
+                "message": f"end_date {end} precedes start_date {start}",
+            })
+
+    return problems
+
+
+def strict_application_problems(data: dict) -> list:
+    problems = []
+    history = data.get("status_history") or []
+    if history and data.get("status") and history[-1].get("status") != data["status"]:
+        problems.append({
+            "path": "status",
+            "message": f"status {data['status']!r} does not match the last "
+                       f"status_history entry {history[-1].get('status')!r}",
+        })
+    dates = [h.get("date") for h in history if h.get("date")]
+    if dates != sorted(dates):
+        problems.append({
+            "path": "status_history",
+            "message": "entries are not in chronological order — history is append-only",
+        })
+    for field in ("resume_file", "cover_letter_file", "job_description_file", "profile_file"):
+        value = data.get(field)
+        if value and (str(value).startswith("/") or ":" in str(value)[:3]):
+            problems.append({
+                "path": field,
+                "message": f"{value!r} looks absolute; paths are relative to the profile directory",
+            })
+    return problems
+
+
+STRICT_CHECKS = {
+    "profile": strict_profile_problems,
+    "application": strict_application_problems,
 }
 
 
@@ -68,7 +182,7 @@ def load_schema(name: str) -> dict:
     return json.loads(SCHEMAS[name].read_text(encoding="utf-8"))
 
 
-def validate_file(path: Path, schema_name: str = None) -> dict:
+def validate_file(path: Path, schema_name: str = None, strict: bool = False) -> dict:
     """Validate one file. Returns a result dict; never raises for bad data."""
     result = {"file": relative_to_root(path), "schema": schema_name, "valid": False}
 
@@ -95,6 +209,13 @@ def validate_file(path: Path, schema_name: str = None) -> dict:
     errors = sorted(validator.iter_errors(data), key=lambda e: list(e.absolute_path))
     if not errors:
         result["valid"] = True
+        if strict and name in STRICT_CHECKS and isinstance(data, dict):
+            strict_problems = STRICT_CHECKS[name](data)
+            if strict_problems:
+                result["valid"] = False
+                result["strict_errors"] = strict_problems[:30]
+                if len(strict_problems) > 30:
+                    result["strict_errors_truncated"] = len(strict_problems) - 30
         return result
 
     result["errors"] = [
@@ -138,6 +259,12 @@ def main():
         help="Validate every schema-covered JSON file under data/profiles/",
     )
     parser.add_argument("--slug", help="Limit --all to one profile")
+    parser.add_argument(
+        "--strict", action="store_true",
+        help="Also check the data-integrity rules the schema cannot express: "
+             "source_file on every entry, ISO 8601 dates, evidence behind every "
+             "proficiency, status matching status_history",
+    )
     args = parser.parse_args()
 
     if args.all:
@@ -151,11 +278,12 @@ def main():
         print(json.dumps({"status": "nothing_to_validate", "checked": 0}, indent=2))
         return
 
-    results = [validate_file(p, args.schema) for p in targets]
+    results = [validate_file(p, args.schema, strict=args.strict) for p in targets]
     failed = [r for r in results if not r["valid"]]
 
     print(json.dumps({
         "status": "valid" if not failed else "invalid",
+        "strict": args.strict,
         "checked": len(results),
         "failed": len(failed),
         "results": results if failed else [

@@ -1,9 +1,8 @@
 """Tests for shared path helpers, slug generation, and cover-letter counting."""
-import pytest
-
 import common
-from profile_create import name_to_slug
+import pytest
 from generate_cover_letter import word_count
+from profile_create import name_to_slug
 
 
 @pytest.fixture

@@ -81,12 +81,10 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from docx import Document
-from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
-from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
-
+from docx.oxml.ns import qn
+from docx.shared import Inches, Pt, RGBColor
 from layout import (
     LINE_HEIGHT,
     metrics_source,
@@ -95,7 +93,6 @@ from layout import (
     verify_page_count,
     wrapped_lines,
 )
-
 
 # Formatting constants (from resume-formatting.md)
 FONT_NAME = "Calibri"
@@ -233,7 +230,7 @@ def estimate_pages(data, density):
             entries = []
             for role in earlier:
                 title, company = role.get("title", ""), role.get("company", "")
-                entries.append("{} at {}".format(title, company) if title and company else company)
+                entries.append(f"{title} at {company}" if title and company else company)
             total += paragraph(" | ".join(e for e in entries if e))
 
     education = data.get("education") or []
@@ -287,22 +284,18 @@ def choose_density(data, target_pages=None, requested="auto"):
                     requested, ", ".join(DENSITY_BY_NAME)
                 )
             )
-        return DENSITY_BY_NAME[requested], "density '{}' requested explicitly".format(requested)
+        return DENSITY_BY_NAME[requested], f"density '{requested}' requested explicitly"
 
     if target_pages:
         for density in DENSITIES:
             estimate = estimate_pages(data, density)
             if estimate <= target_pages:
                 return density, (
-                    "auto: loosest preset fitting {} page(s) (estimated {:.2f})".format(
-                        target_pages, estimate
-                    )
+                    f"auto: loosest preset fitting {target_pages} page(s) (estimated {estimate:.2f})"
                 )
         tightest = DENSITIES[-1]
         return tightest, (
-            "auto: content exceeds {} page(s) even at '{}' (estimated {:.2f}) - trim content".format(
-                target_pages, tightest.name, estimate_pages(data, tightest)
-            )
+            f"auto: content exceeds {target_pages} page(s) even at '{tightest.name}' (estimated {estimate_pages(data, tightest):.2f}) - trim content"
         )
 
     estimate = estimate_pages(data, DEFAULT_DENSITY)
@@ -312,12 +305,10 @@ def choose_density(data, target_pages=None, requested="auto"):
         for density in DENSITIES:
             if estimate_pages(data, density) <= goal:
                 return density, (
-                    "auto: tightened to '{}' to reclaim a trailing page holding "
-                    "only {:.0%} of a page".format(density.name, overflow)
+                    f"auto: tightened to '{density.name}' to reclaim a trailing page holding "
+                    f"only {overflow:.0%} of a page"
                 )
-    return DEFAULT_DENSITY, "auto: '{}' (estimated {:.2f} pages)".format(
-        DEFAULT_DENSITY.name, estimate
-    )
+    return DEFAULT_DENSITY, f"auto: '{DEFAULT_DENSITY.name}' (estimated {estimate:.2f} pages)"
 
 
 def set_font(run, size=BODY_SIZE, bold=False, color=COLOR_BODY):
@@ -652,7 +643,7 @@ def generate_resume(data, output_path, template_path=None, density=None,
     if density is None:
         density, note = choose_density(data, target_pages, requested_density)
     else:
-        note = "density '{}' supplied by caller".format(density.name)
+        note = f"density '{density.name}' supplied by caller"
 
     doc, dropped_from_template = open_base_document(template_path)
 

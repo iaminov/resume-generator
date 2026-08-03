@@ -65,7 +65,7 @@ def load(path: Path) -> dict:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as e:
-        raise ValueError(f"invalid JSON in {path.name}: {e}")
+        raise ValueError(f"invalid JSON in {path.name}: {e}") from e
 
 
 def check_transition(current: str, new: str, force: bool = False) -> str | None:

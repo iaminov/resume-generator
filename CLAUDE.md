@@ -159,8 +159,9 @@ these operations.
 | `tools/profile_create.py` | Create profile directory structure | `python3 tools/profile_create.py "Full Name" [--slug slug]` |
 | `tools/profile_switch.py` | List profiles or switch active | `python3 tools/profile_switch.py [slug]` |
 | `tools/profile_delete.py` | Delete a profile (dry-run or confirmed) | `python3 tools/profile_delete.py slug [--confirm]` |
-| `tools/validate.py` | Validate profile/application/job-description JSON against the schemas | `python3 tools/validate.py <file>` or `--all` |
+| `tools/validate.py` | Validate JSON against the schemas; `--strict` also checks the data-integrity rules schemas cannot express | `python3 tools/validate.py <file> [--strict]` or `--all` |
 | `tools/application_update.py` | Change an application's status or log activity, with transition validation | `python3 tools/application_update.py <record> --status applied` |
+| `tools/application_status.py` | Report search state: active, gone quiet, overdue follow-ups, stale documents | `python3 tools/application_status.py [--stale-days N] [--json]` |
 
 Two modules in `tools/` are shared code rather than CLIs:
 

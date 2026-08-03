@@ -10,7 +10,6 @@ This module is imported as a sibling (`from common import ...`), which works
 because running `python3 tools/<script>.py` puts tools/ on sys.path.
 """
 from pathlib import Path
-from typing import Optional
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
@@ -18,7 +17,7 @@ PROFILES_DIR = DATA_DIR / "profiles"
 ACTIVE_PROFILE_FILE = DATA_DIR / ".active-profile"
 
 
-def get_active_slug() -> Optional[str]:
+def get_active_slug() -> str | None:
     """Return the active profile slug, or None if unset.
 
     An absent file and an empty one both mean "no active profile" -- callers

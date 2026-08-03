@@ -5,8 +5,6 @@ calibration constant in particular is an empirical value that could drift
 without anything visibly breaking.
 """
 import pytest
-
-from layout import LINE_HEIGHT, text_width_pt, wrapped_lines
 from generate_resume import (
     DENSITIES,
     DENSITY_BY_NAME,
@@ -15,6 +13,7 @@ from generate_resume import (
     choose_density,
     estimate_pages,
 )
+from layout import LINE_HEIGHT, text_width_pt, wrapped_lines
 
 
 class TestWrappedLines:
@@ -156,8 +155,8 @@ class TestVerificationFallback:
         assert layout.verify_page_count(tmp_path / "anything.docx") is None
 
     def test_generation_still_succeeds_without_a_renderer(self, monkeypatch, tmp_path, short_resume):
-        import layout
         import generate_resume
+        import layout
         monkeypatch.setattr(layout, "_render_pdf", lambda p: None)
         out = tmp_path / "resume.docx"
         density, note, dropped = generate_resume.generate_resume(short_resume, out)
@@ -188,8 +187,8 @@ class TestEstimatorAccuracy:
 
     @pytest.mark.parametrize("fixture_name", ["short_resume", "long_resume"])
     def test_estimate_lands_near_the_real_render(self, request, tmp_path, fixture_name):
-        import layout
         import generate_resume
+        import layout
 
         if layout._render_pdf(__file__) is None and not _renderer_available():
             pytest.skip("no LibreOffice available to verify against")

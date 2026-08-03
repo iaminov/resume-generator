@@ -1,0 +1,21 @@
+# Deliberately conservative: catch real defects (unused imports, undefined
+# names, mutable default arguments) without imposing a formatter on a codebase
+# that reads fine as it is.
+line-length = 100
+target-version = "py310"
+
+[lint]
+select = [
+    "F",    # pyflakes: undefined names, unused imports and variables
+    "E9",   # syntax and IO errors
+    "B",    # bugbear: mutable defaults, shadowed loop vars, silent except
+    "UP",   # outdated syntax that pyupgrade would fix
+    "I",    # import ordering
+]
+ignore = [
+    "B008",  # function call in default arg -- fine for Pt()/Inches() constants
+]
+
+[lint.per-file-ignores]
+# Tests reach into module internals on purpose.
+"tests/*" = ["B011"]

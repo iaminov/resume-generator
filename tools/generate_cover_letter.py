@@ -46,9 +46,8 @@ import sys
 from datetime import date
 from pathlib import Path
 
-from docx import Document
-from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Inches, Pt, RGBColor
 
 # Shared page verification, so both generators agree on what "one page" means.
 # tools/ is on sys.path when these scripts are run.

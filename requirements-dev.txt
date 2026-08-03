@@ -1,3 +1,4 @@
 # Test-only dependencies. Not needed to run the tools.
 -r requirements.txt
 pytest~=9.1
+ruff~=0.14

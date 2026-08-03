@@ -337,6 +337,7 @@ Deterministic work runs through pre-built scripts rather than generated code.
 | `layout.py` | Shared text metrics, template loading, page verification (module, not a CLI) |
 | `validate.py` | Validate profile/application/job-description JSON against the schemas |
 | `application_update.py` | Change an application's status or log activity, with transition validation |
+| `application_status.py` | Report search state: active, gone quiet, overdue follow-ups, stale documents |
 | `common.py` | Shared paths and active-profile helpers (module, not a CLI) |
 | `profile_create.py` / `profile_switch.py` / `profile_delete.py` | Profile management |
 
@@ -390,11 +391,29 @@ change, validates against the schema before and after, and writes atomically.
 
 ```bash
 python3 tools/validate.py data/profiles/jane-doe/profile.json
-python3 tools/validate.py --all          # every profile, every covered file
+python3 tools/validate.py --all              # every profile, every covered file
+python3 tools/validate.py --all --strict     # plus the rules schemas cannot express
 ```
 
 Infers the schema from the file's location, reports the exact JSON path at fault,
 and exits non-zero so it can gate a workflow.
+
+`--strict` adds the requirements `data-integrity.md` states but JSON Schema
+cannot check: every entry carries a bare `source_file`, dates are ISO 8601, no
+skill claims a proficiency without evidence, `is_current` roles have no end date,
+and an application's `status` matches the last entry in its `status_history`.
+
+### Search status
+
+```bash
+python3 tools/application_status.py                  # active profile
+python3 tools/application_status.py --stale-days 21
+```
+
+Reports what is still live, which applications have had no movement past the
+threshold, which follow-ups are overdue, and which generated documents were built
+from an older `profile.json` than the current one. Terminal statuses are never
+reported as quiet.
 
 ## File Naming Conventions
 

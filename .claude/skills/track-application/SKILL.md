@@ -29,6 +29,18 @@ When searching for a specific application (by company name, role, or any keyword
 
 ## Commands
 
+### Search status
+User says: "how's my job search", "what's outstanding", "anything gone quiet"
+
+Run `python3 tools/application_status.py`. It reports active applications,
+anything with no movement past the threshold, overdue follow-ups, and generated
+documents built from an older `profile.json` than the current one. Use
+`--stale-days N` to tighten or loosen the quiet threshold, `--json` for
+machine-readable output.
+
+Do not compute this by reading every record and doing date arithmetic by hand —
+terminal statuses must never be reported as quiet, and that rule lives in the tool.
+
 ### Update status
 User says: "update [company] [role] to [status]"
 1. Find the application in `data/profiles/{slug}/applications/`

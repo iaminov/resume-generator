@@ -5,12 +5,11 @@ before the loader existed: leftover body content silently prepended itself to
 every generated document, and a template lacking "List Bullet" died with a bare
 KeyError from deep inside python-docx.
 """
+import generate_cover_letter
+import generate_resume
 import pytest
 from docx import Document
-
 from layout import REQUIRED_STYLES, open_base_document
-import generate_resume
-import generate_cover_letter
 
 REPO_TEMPLATE = "templates/default.docx"
 

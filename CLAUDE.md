@@ -162,7 +162,7 @@ these operations.
 
 | Script | Purpose | Usage |
 |---|---|---|
-| `tools/docx_to_md.py` | Convert single DOCX to markdown | `python3 tools/docx_to_md.py file.docx` |
+| `tools/docx_to_md.py` | Convert single DOCX to markdown; reports any text it could not extract | `python3 tools/docx_to_md.py file.docx [--json]` |
 | `tools/extract_resumes.py` | Batch-extract all resumes for a profile | `python3 tools/extract_resumes.py [--slug name]` |
 | `tools/generate_cover_letter.py` | Generate .docx cover letter from JSON content; warns if over one page or 400 words | `python3 tools/generate_cover_letter.py content.json output.docx` |
 | `tools/generate_resume.py` | Generate .docx resume from JSON content; spacing adapts to fit a page goal | `python3 tools/generate_resume.py content.json output.docx [--target-pages 1] [--density auto\|normal\|compact\|dense]` |
@@ -184,6 +184,17 @@ Two modules in `tools/` are shared code rather than CLIs:
 - **`layout.py`** — text metrics (`wrapped_lines`, `text_width_pt`) and page
   verification (`verify_layout`, `verify_page_count`). Both generators use it,
   so neither has to import the other.
+
+## DOCX Extraction Failsafe
+
+`docx_to_md.py` extracts greedily — body text in document order, tables
+including nested ones and those inside headers and footers, text boxes, and
+headers/footers themselves. It then compares every text node in the file
+against what came out and **reports anything that did not make it**.
+
+No extractor anticipates every construct Word emits, and this output is what
+`profile.json` is built from. A resume quietly losing an employer is far worse
+than a warning, so act on a non-empty `skipped` list rather than ignoring it.
 
 ## Profile Resolution and Versioning
 
@@ -237,8 +248,28 @@ bullet glyphs) and pass it with `--template`. Per-run spacing still comes from
 the density presets, which override the template's margins.
 
 ## Dependencies
-Python packages are listed in `requirements.txt`. Install via:
+Runtime packages are pinned in `requirements.txt` and mirrored in
+`pyproject.toml`; test and lint tooling lives in `requirements-dev.txt` and the
+`dev` extra. Versions use compatible-release ranges (`~=`) rather than `>=`,
+because python-docx decides the default styles every generated document
+inherits and an unbounded range can change output without anything here
+changing.
+
 ```bash
-python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt          # runtime only
+pip install -e ".[dev]"                  # plus pytest and ruff, and puts the
+                                         #   console entry points on PATH
 ```
 (Alternatively, "python" if the "python3" command is not available.)
+
+Installing is optional. `python3 tools/<script>.py` works without it, and that
+is the form every skill and rule uses.
+
+## Lint
+```bash
+ruff check tools/ tests/
+```
+Configured in `ruff.toml` to catch defects — undefined names, unused imports,
+mutable defaults, unchained raises — without imposing a formatter. CI runs it
+alongside the tests, so a dead import left by a refactor fails the build.

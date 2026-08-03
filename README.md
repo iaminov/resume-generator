@@ -340,7 +340,7 @@ Deterministic work runs through pre-built scripts rather than generated code.
 
 | Script | Purpose |
 |---|---|
-| `docx_to_md.py` | Convert a DOCX to markdown |
+| `docx_to_md.py` | Convert a DOCX to markdown; reports any text it could not extract |
 | `extract_resumes.py` | Batch-extract every resume for a profile |
 | `generate_resume.py` | Build a .docx resume from JSON; spacing adapts to a page goal |
 | `generate_cover_letter.py` | Build a .docx cover letter from JSON |
@@ -397,6 +397,21 @@ It validates the move against a transition graph (so a record cannot skip from
 `status_history` instead of rewriting it, timestamps every entry, journals the
 change, validates against the schema before and after, and writes atomically.
 `ghosted` is deliberately recoverable — employers do resurface.
+
+### DOCX extraction
+
+`docx_to_md.py` extracts greedily — body text in document order, tables
+including nested ones and those inside headers and footers, text boxes, and
+headers and footers themselves. It then compares every text node in the file
+against what came out and **reports anything that did not make it**:
+
+```bash
+python3 tools/docx_to_md.py resume.docx --json     # includes the skip report
+```
+
+No extractor anticipates every construct Word emits, and this output is what
+your profile is built from. A resume quietly losing an employer is worse than a
+warning, so a non-empty skip list is worth acting on.
 
 ### Comparing versions
 
@@ -501,12 +516,19 @@ resume-validate --all --strict
 resume-application-status --analytics
 ```
 
-## Tests
+## Tests and lint
 
 ```bash
 pip install -e ".[dev]"    # or: pip install -r requirements-dev.txt
 pytest
+ruff check tools/ tests/
 ```
+
+`ruff.toml` is deliberately conservative: it catches defects — undefined names,
+unused imports, mutable defaults, unchained raises — without imposing a
+formatter. Dependencies are pinned with compatible-release ranges in
+`requirements.txt` and `pyproject.toml`, since python-docx decides the default
+styles every generated document inherits.
 
 Covers the pure functions worth pinning: text metrics, page estimation and
 density selection, slug generation, active-profile semantics, and schema

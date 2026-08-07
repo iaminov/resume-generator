@@ -117,6 +117,43 @@ skip it and take a clear generic professional voice. The skill always offers
 both rather than defaulting silently. Samples supply *voice only* — `profile.json`
 remains the sole source of facts. Generated via `tools/generate_cover_letter.py`.
 
+### Phase 1b: Add what the code proves (optional, run as repos change)
+`/scan-codebase` augments an existing profile from the person's own source code.
+Resumes record what someone remembered to write down; the code is the primary
+record of what they actually built, and the only source that can disprove a
+claim as well as support one.
+
+Point it at a whole projects folder — that is the normal case:
+
+```bash
+python3 tools/scan_codebase.py ~/projects --all --author "Name" --author handle
+```
+
+`--all` takes the **parent** directory and treats every subdirectory as its own
+project, git-initialized or not; without it, the path is scanned as a single
+project. It descends one level only.
+
+It uses the same two-phase split as `/parse-resumes`:
+
+1. **Mechanical inventory**: `tools/scan_codebase.py` counts lines by language,
+   finds tests, parses declared dependencies, and asks git who wrote how much
+2. **AI comprehension**: Claude reads the actual source and decides what was
+   built and what belongs in the profile
+
+Authorship is settled **before** anything is recorded. The scan returns an
+`all_authors` roster of every committer found, and the user is asked which
+identities are theirs — people commit under bare first names, hosting handles,
+and nicknames, so this is never inferred. `--author` is repeatable for that
+reason.
+
+**A project without git history is still a project.** Missing `.git` removes the
+ability to check authorship and nothing more; those land in `without_git_history`
+and are brought to the user rather than dropped.
+
+Findings are merged into `profile.json` with evidence, never overwriting it
+wholesale, and an existing claim is never deleted just because no code was found
+for it.
+
 ### Other commands
 - `/review-job` — Analyze a job posting and evaluate fit against a profile
 - `/track-application` — Full application lifecycle: status, contacts, interviews, comp, follow-ups, outcome
@@ -148,6 +185,31 @@ claims belong to strangers. **Verify authorship before recording anything in
 record job-application outcome statistics unless the person states them directly.
 See `.claude/rules/resume-writing.md`.
 
+## Altitude (CRITICAL)
+
+Accuracy is necessary but not sufficient — a true claim pitched at the wrong
+level of abstraction still wastes the line. **The test is whether a screener
+with no context could tell at a glance that a claim is impressive.**
+
+The failure this repo produces is writing *too low*, because profile material is
+built by reading source material closely and inherits the altitude of whatever
+it was read from. `/scan-codebase` is the biggest source of it: reading code
+surfaces details that prove authorship — an unusual algorithm, a precise line
+count, a clever workaround — and they are compelling precisely because they
+could not be invented. That makes them excellent **provenance** and poor
+**content**.
+
+- Keep them in `profile.json` under `evidence` or `outcomes`, where they justify
+  a claim.
+- Put the capability on the page: "timezone-correct scheduling", not "compares
+  the UTC offset at session time against the current one".
+- Numbers need a baseline the reader can judge against. "3,000+ devices" works;
+  "775 of 2,578 lines are tests" hands the reader a question instead of a fact.
+
+See the Altitude section of `.claude/rules/resume-writing.md` for the full rule.
+`/create-resume` runs an explicit altitude pass before generating, and
+`resume-expert` votes REVISE on violations during consensus.
+
 ## Data Integrity
 - Every profile JSON must validate against `schemas/profile.schema.json`
 - Every application JSON must validate against `schemas/application.schema.json`
@@ -167,6 +229,7 @@ these operations.
 | `tools/generate_cover_letter.py` | Generate .docx cover letter from JSON content; warns if over one page or 400 words | `python3 tools/generate_cover_letter.py content.json output.docx` |
 | `tools/generate_resume.py` | Generate .docx resume from JSON content; spacing adapts to fit a page goal | `python3 tools/generate_resume.py content.json output.docx [--target-pages 1] [--density auto\|normal\|compact\|dense]` |
 | `tools/profile_create.py` | Create profile directory structure | `python3 tools/profile_create.py "Full Name" [--slug slug]` |
+| `tools/scan_codebase.py` | Mechanically inventory a codebase: lines by language, tests, declared dependencies, git authorship. Counts only — no judgments | `python3 tools/scan_codebase.py <path> [--all] [--author "Name"] [--out f.json]` |
 | `tools/profile_switch.py` | List profiles or switch active | `python3 tools/profile_switch.py [slug]` |
 | `tools/profile_delete.py` | Delete a profile (dry-run or confirmed) | `python3 tools/profile_delete.py slug [--confirm]` |
 | `tools/validate.py` | Validate JSON against the schemas; `--strict` also checks the data-integrity rules schemas cannot express | `python3 tools/validate.py <file> [--strict]` or `--all` |

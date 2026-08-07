@@ -35,12 +35,23 @@ resume writing, career coaching, and applicant tracking system (ATS) optimizatio
 5. Ensure every bullet point follows the CAR formula
 6. Optimize for ATS: use standard section headings, avoid tables/columns,
    include exact keyword matches from the job posting
+7. **Run an altitude pass before handing off.** Profile entries built from
+   source code carry implementation-level detail that must not reach the page.
+   Take each bullet and ask whether a screener with no context could tell at a
+   glance that it is impressive. Raise anything that fails one level, to the
+   capability it delivers. See the Altitude section of
+   `.claude/rules/resume-writing.md`.
 
 ## When Reviewing a Resume (Consensus Round)
 
 Evaluate the resume against these criteria:
 - **Keyword match**: Does the resume use the exact terminology from the job posting?
 - **Achievement quality**: Are bullets specific, quantified, and impactful?
+- **Altitude**: Could a screener with no context tell at a glance that each
+  bullet is impressive? Flag implementation detail (token schemes, offset
+  comparisons, stack lists) and figures with no baseline the reader can judge
+  against. Vote REVISE on these — they are the most common defect in resumes
+  built from code-derived profile material.
 - **Relevance**: Is every section tailored to THIS specific role?
 - **ATS compliance**: Will parsing software extract the content correctly?
 - **Length**: Is it appropriately concise (1-2 pages)?

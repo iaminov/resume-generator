@@ -76,7 +76,17 @@ Generate a tailored, optimized resume through the 5-agent consensus workflow.
      Resume Expert, Employer Emulator, Recruiter, Bias Auditor, Fact Checker
    - Each round reports status to user
 
-7. **Generate .docx**:
+7. **Altitude pass** (before generating anything):
+   - Read every bullet in the agreed content and ask whether a screener with no
+     context could tell at a glance that it is impressive.
+   - Cut or raise implementation detail (token schemes, offset arithmetic, bare
+     stack lists) and figures with no baseline the reader can judge against
+     ("775 of 2,578 lines are tests"). Replace with the capability delivered.
+   - This matters most for profile entries sourced from `/scan-codebase`, which
+     are built by reading code and inherit code-level altitude by default.
+   - See the Altitude section of `.claude/rules/resume-writing.md`.
+
+8. **Generate .docx**:
    - Write the final resume content as a JSON file matching the input format
      documented in `tools/generate_resume.py` (name, contact, summary, skills,
      experience, education, certifications, projects, publications, awards)
@@ -93,7 +103,7 @@ Generate a tailored, optimized resume through the 5-agent consensus workflow.
      data, so without the sidecar any later tweak means rebuilding the whole
      document from the profile. See `.claude/rules/data-integrity.md`.
 
-8. **Create application record**:
+9. **Create application record**:
    - Save to `data/profiles/{slug}/applications/{date}_{company}_{role}.json`
    - Validate it: `python3 tools/validate.py <the record>`
    - Initial status: `draft` (changes to `ready` after user approval)
@@ -109,7 +119,7 @@ Generate a tailored, optimized resume through the 5-agent consensus workflow.
      updating the profile), the user can move it back out of `processed/`
      into `input-job-postings/` — no code change needed, just move the file.
 
-9. **Present to user**:
+10. **Present to user**:
    - Show final resume content
    - Show consensus summary (which agents approved, any dissenting notes)
    - Ask user to approve or request manual changes

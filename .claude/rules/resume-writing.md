@@ -7,6 +7,8 @@ paths:
   - ".claude/skills/create-resume/**"
   - ".claude/skills/create-cover-letter/**"
   - ".claude/skills/review-job/**"
+  - ".claude/skills/parse-resumes/**"
+  - ".claude/skills/scan-codebase/**"
 ---
 
 # Resume Writing Principles
@@ -87,6 +89,62 @@ conversion rates by 28 percent across B2C campaigns in SaaS."*
   action and drop the action. "Patched a third-party library to add missing
   namespace support" is evidence; "and filed the upstream feature request"
   is filler riding on it.
+
+## Altitude
+
+Every claim sits at some level of abstraction. Too high is vague filler
+("leveraged modern technologies"); too low is an implementation note the reader
+cannot act on. Both waste the line, and **too low is the failure this repo
+actually produces**, because profile material is built by reading source
+material closely and inherits the altitude of whatever it was read from.
+
+**The test: can the reader evaluate this at a glance?** They have seconds and no
+context beyond the page. A claim earns its space only if a non-expert screener
+can tell whether it is impressive.
+
+Numbers pass the test when the reader has a baseline:
+
+- "3,000+ devices", "100+ students", "a team of 8", "six LLM providers" — all
+  instantly legible as large or small.
+- "775 of 2,578 lines are tests", "19 references to Bedrock", "six methods
+  across three resources" — no baseline. The reader's honest reaction is *is
+  that a lot?*, which hands them a question instead of a fact.
+
+Features pass the test when they name a capability, not a mechanism:
+
+- Good: "timezone-correct scheduling", "cross-account tenant isolation",
+  "survives partial failure across four external services".
+- Too low: "stores a sha256 hash of a `secrets.token_urlsafe(32)` token",
+  "compares the UTC offset at session time against the current one",
+  "Lambda behind API Gateway with DynamoDB for state" (a stack list where an
+  outcome belongs — see the section above).
+
+### Unfakeable is not the same as noteworthy
+
+When material is derived from reading code, the details that prove authorship
+are seductive: they are specific, verifiable, and impossible to invent. That
+makes them excellent **provenance** and poor **content**. "Nobody could fake
+this" is a reason to trust a claim; it is not a reason to spend a line on it.
+Keep the verification in `profile.json` as evidence and put the capability on
+the page.
+
+### Symptoms
+
+- A bullet naming the two smallest things in a large system inverts the scale
+  signal: the reader infers that the token-hashing scheme was the high point.
+- Bullets at inconsistent altitude within one role — three describing what was
+  built, one describing how a function works — make the odd one out read as
+  padding.
+- Any bullet that answers "what was tricky about it?" is an interview answer
+  that wandered onto the resume. Cut it from the page; it is a genuinely good
+  thing to have ready when asked.
+
+### Applying it
+
+Rewrite low bullets one level up, keeping the strongest thing that survives.
+Where the detail is worth preserving for interview prep, keep it in
+`profile.json` or in a reference document — not in generated output. If raising
+the altitude leaves nothing worth saying, the bullet was filler and should go.
 
 ## The Depth Test
 

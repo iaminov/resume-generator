@@ -135,6 +135,45 @@ Uses a two-phase AI pipeline to build a comprehensive `profile.json` from all re
 
 ---
 
+### `/scan-codebase` - Add What Your Code Proves
+
+Augments an existing profile from your own source repositories. A resume records what you remembered to write down; your code is the primary record of what you actually built.
+
+**Usage:** Run `/scan-codebase` and point it at your projects folder. Scanning everything at once is the normal case — Claude runs the inventory itself, but the underlying command is:
+
+```bash
+# every project in a folder — point --all at the PARENT directory
+python3 tools/scan_codebase.py ~/PycharmProjects --all \
+    --author "Jane Doe" --author jdoe --out scan.json
+
+# one project on its own — no --all, pass the project directory
+python3 tools/scan_codebase.py ~/PycharmProjects/widget-service --author jdoe
+```
+
+`--all` treats every subdirectory as a separate project, **whether or not it has git initialized** — a project without a `.git` is still a project, it just has no authorship record. It descends exactly one level, so a folder that itself contains projects needs its own `--all`. Vendored and build directories (`node_modules`, `.venv`, `dist`, …) are always skipped.
+
+`--author` is repeatable, and you should pass every identity you commit under — a full name on one machine, a GitHub handle on another, a nickname on a third. The scan reports every committer it finds so you can confirm which are yours.
+
+**How it works:**
+1. **Mechanical inventory**: `tools/scan_codebase.py` counts lines by language, finds test files, parses declared dependencies, and asks git who wrote how much — counts only, no judgments
+2. **Identity confirmation**: you are shown every committer identity found across every project and asked which are yours, before anything is attributed
+3. **AI comprehension**: Claude reads the actual source and works out what each project is and what it demonstrates
+
+**What it produces:**
+- New `projects` and `skills` entries in `profile.json`, each with evidence naming the repo and what in it supports the claim
+- Proficiency upgrades where code evidence outranks a bare mention in an old resume
+- A record of which repos were scanned and which remain, so an interrupted scan can resume
+
+**Rules:**
+- **Authorship is verified from git first, and identities are confirmed with you.** A directory on your disk is not evidence you wrote it, and a handle is not evidence it's yours. Minority-authored repos describe your contribution, not the project; unestablished authorship is brought back to you rather than assumed.
+- **A missing `.git` never disqualifies a project.** It removes the ability to check authorship and nothing else. Those projects are listed separately and you're asked about them.
+- **Teaching material, demos, and scratch work are skipped** even when they're large and entirely yours — a folder of live-coding examples is many disconnected snippets, not a system.
+- **Existing claims are never deleted for lack of code.** Absence of evidence is not evidence of absence — you may have used a technology at a job whose code isn't on your laptop. Such conflicts get flagged, not resolved.
+- **Findings are written at resume altitude.** Implementation detail stays in the evidence field where it belongs. See [Altitude](#altitude) below.
+- Client names, credentials, and customer data found in source never enter the profile.
+
+---
+
 ### `/create-resume` - Generate a Tailored Resume
 
 Creates an optimized, job-specific resume through the full 5-agent consensus workflow.
@@ -348,6 +387,7 @@ Deterministic work runs through pre-built scripts rather than generated code.
 |---|---|
 | `docx_to_md.py` | Convert a DOCX to markdown; reports any text it could not extract |
 | `extract_resumes.py` | Batch-extract every resume for a profile |
+| `scan_codebase.py` | Inventory a codebase: lines by language, tests, dependencies, git authorship. Counts only — never judgments |
 | `generate_resume.py` | Build a .docx resume from JSON; spacing adapts to a page goal |
 | `generate_cover_letter.py` | Build a .docx cover letter from JSON |
 | `layout.py` | Shared text metrics, template loading, page verification (module, not a CLI) |
@@ -529,6 +569,42 @@ one-line change means regenerating the document from scratch.
   often hold third-party advice and pasted articles whose first-person claims
   belong to strangers; authorship is verified before anything is recorded as the
   person's own statement
+
+## Altitude
+
+Accuracy is necessary but not sufficient. A claim can be perfectly true and
+still waste the line it sits on by being pitched at the wrong level of
+abstraction.
+
+**The test: could a screener with no context tell at a glance that this is
+impressive?** They have seconds and nothing but the page.
+
+The failure mode here is writing *too low*, and it is structural rather than
+careless — profile material is built by reading source material closely, so it
+inherits the altitude of whatever it was read from. `/scan-codebase` is the
+strongest source of it. Reading code surfaces details that prove authorship: an
+unusual algorithm, a precise line count, a clever workaround. They are
+compelling exactly because nobody could invent them, which makes them excellent
+**provenance** and poor **content**.
+
+| Too low | At altitude |
+|---|---|
+| "stores a sha256 hash of a `secrets.token_urlsafe(32)` token" | "single-use signup invitations with expiry and revocation" |
+| "compares the UTC offset at session time against the current one" | "timezone-correct scheduling" |
+| "Lambda behind API Gateway, DynamoDB for state, cross-account IAM" | "deploys AI agents into isolated accounts with per-tenant provisioning" |
+| "775 of 2,578 lines are tests" | (cut — the reader has no baseline to judge it against) |
+
+Numbers earn their place when the reader has a baseline. "3,000+ devices",
+"100+ students", and "a team of 8" are instantly legible; a line-count ratio is
+not, and hands the reader a question instead of a fact.
+
+Detail that fails the test is not discarded — it stays in `profile.json` under
+`evidence` or `outcomes`, where it justifies the claim above it and is ready for
+the interview question it actually answers. The rule is enforced in three
+places: `/scan-codebase` applies it when writing entries, `/create-resume` runs
+an explicit altitude pass before generating, and the `resume-expert` agent votes
+REVISE on violations during consensus. The full rule lives in
+`.claude/rules/resume-writing.md`.
 
 ## Installation as a package
 

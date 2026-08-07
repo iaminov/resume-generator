@@ -81,7 +81,7 @@ def _overdue_follow_ups(record, now):
     return out
 
 
-def summarise(slug, stale_days=DEFAULT_STALE_DAYS, now=None):
+def summarize(slug, stale_days=DEFAULT_STALE_DAYS, now=None):
     now = now or datetime.now(timezone.utc)
     root = PROFILES_DIR / slug
     if not root.exists():
@@ -313,7 +313,7 @@ def main():
         if args.analytics:
             print(json.dumps(analytics(slug), indent=2))
             return
-        summary = summarise(slug, args.stale_days)
+        summary = summarize(slug, args.stale_days)
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

@@ -43,17 +43,6 @@ This single command:
 
 Parse the JSON output. Report the file count to the user. If no files found, stop.
 
-#### Extraction failsafe — act on the `skipped` list
-
-`docx_to_md.py` extracts greedily — body text in document order, tables
-including nested ones and those inside headers and footers, text boxes, and
-headers/footers themselves. It then compares every text node in the file
-against what came out and **reports anything that did not make it**.
-
-No extractor anticipates every construct Word emits, and this output is what
-`profile.json` is built from. A resume quietly losing an employer is far worse
-than a warning, so act on a non-empty `skipped` list rather than ignoring it.
-
 Do NOT write bash loops, temp directories, or custom extraction scripts.
 This one command handles all extraction.
 

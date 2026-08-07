@@ -1,0 +1,169 @@
+# CLAUDE.md trim — what changed and why
+
+Date: 2026-08-07
+
+`CLAUDE.md` is re-read into context at the start of every session, so every line
+in it is a recurring cost. This pass removed content a session can reconstruct
+for itself and moved context-specific content to files that load only when
+relevant. **Result: 19,698 → 10,527 chars (345 → 196 lines), ≈2,300 fewer
+estimated tokens resident per session.**
+
+Nothing was deleted outright — the original files are archived alongside this
+one:
+
+| Archive file | Original location |
+|---|---|
+| `claude.md-archive` | `CLAUDE.md` |
+| `resume-formatting.md-archive` | `.claude/rules/resume-formatting.md` |
+| `parse-resumes-SKILL.md-archive` | `.claude/skills/parse-resumes/SKILL.md` |
+| `settings.json-archive` | `.claude/settings.json` |
+
+To revert any single change, copy the archive back over the original.
+
+---
+
+## The test applied
+
+A line of a checked-in `CLAUDE.md` that a fresh session could reconstruct with a
+few tool calls (`ls`, `cat`, reading the manifest, `--help`) is dead weight every
+session it loads into. Content that is *not* derivable from the codebase —
+gotchas, design rationale, non-standard conventions, safety-critical
+prohibitions — was kept.
+
+When unsure, the content was kept. **Every "NEVER" rule survives untouched.**
+
+---
+
+## Part 1 — content removed as derivable (≈2,020 est. tokens)
+
+### A. Directory Structure tree — 26 lines, 1,580 chars, ~395 est. tokens
+
+`ls`/`find` shows the tree. Every non-obvious annotation in it was already
+restated elsewhere **in the same file**: `input-notes/` → the "Notes vs Resumes
+(CRITICAL)" section; `processed/` → Key Rules; `input-voice-samples/` → the
+`create-cover-letter` skill.
+
+### B. Agent System roster (7 numbered entries) — 10 lines, 680 chars, ~170 est. tokens
+
+Verbatim from the `description:` frontmatter of `.claude/agents/*.md`, which is
+**already resident** in the agent listing every session — so it was being paid
+for twice. Replaced with a two-line pointer. The design rationale that follows
+it (why a cover letter gets exactly two reviewers) is not derivable and was
+kept.
+
+### C. Workflow section — 74 lines, 3,836 chars, ~959 est. tokens
+
+The largest single cut. Every subsection was a prose restatement of a
+`SKILL.md` that already loads when its command runs — verified against
+`create-resume`, `create-cover-letter`, `parse-resumes`, and `scan-codebase`,
+each of which covers its own workflow in more detail than CLAUDE.md did.
+
+Replaced with a command index plus the **two constraints the skills depend on
+but cannot enforce**, which were the only non-derivable content in the section:
+
+- `/parse-resumes` must run first; `profile.json` is the single source of truth.
+- Documents are generated only by `tools/generate_resume.py` and
+  `tools/generate_cover_letter.py` — never inline python-docx.
+
+### D. Tools table (13 scripts) — 14 lines, 2,033 chars, ~508 est. tokens
+
+`ls tools/` plus `--help` (every script uses argparse, 5–8 arguments each).
+Replaced with one line saying exactly that. **Kept**: the directive above the
+table ("skills must call these scripts — never generate new scripts or write
+inline code"), and the `common.py` / `layout.py` notes below it, which explain
+*why* those modules exist rather than what they contain.
+
+### E. Dry Runs section — 5 lines, 212 chars, ~53 est. tokens
+
+`--dry-run` is declared in both generators' argparse. Its one useful sentence
+(use it to check a page target before writing a file) was folded into the Tools
+section instead of dropped.
+
+---
+
+## Part 2 — content moved to lazy loading (≈450 est. tokens)
+
+This content is worth keeping but only matters in one context, so it now loads
+in that context instead of always.
+
+### Templates section → `.claude/rules/resume-formatting.md`
+
+25 lines, 1,249 chars, ~312 est. tokens.
+
+That rule file already declares `paths: templates/**`, so it attaches exactly
+when someone touches a template — which is the only time these gotchas apply
+(body content is stripped; the template must define `Normal` and `List Bullet`;
+a missing `--template` path is an error, not a silent fallback). Moved
+verbatim.
+
+### DOCX Extraction Failsafe → `.claude/skills/parse-resumes/SKILL.md`
+
+10 lines, 556 chars, ~139 est. tokens.
+
+The extractor only runs during `/parse-resumes`, and that skill already invokes
+`extract_resumes.py`. The failsafe text now sits directly after the step that
+parses the extractor's JSON output — closer to the point of use than it was in
+CLAUDE.md. Moved verbatim, under a new `#### Extraction failsafe` heading.
+
+---
+
+## Part 3 — permission posture: `Bash(*)` narrowed
+
+`.claude/settings.json` previously allowed `Bash(*)` — every shell command,
+pre-approved, for anyone who clones this repo — with only `Bash(rm -rf *)` and
+`Bash(rm -r *)` denied. That pre-approved `curl`, `wget`, arbitrary interpreters,
+`git push`, and `rm` in every form the two deny rules miss (`rm -f`, `rm -fr`,
+`rm --recursive`).
+
+Replaced with an allowlist of what this project actually runs, derived from
+observed usage:
+
+```
+Bash(ls:*)  Bash(cat:*)  Bash(cd:*)
+Bash(git status:*)  Bash(git diff:*)  Bash(git log:*)  Bash(git show:*)
+Bash(pytest:*)  Bash(ruff check:*)
+Bash(python3 tools/:*)  Bash(python tools/:*)
+Bash(.venv/Scripts/python.exe tools/:*)
+```
+
+and a deny list extended to cover the `rm` variants, force-pushes, and
+`curl`/`wget`.
+
+**Two honest caveats:**
+
+1. These are **prefix string matches, not a sandbox.** `Bash(python3 tools/:*)`
+   pre-approves anything beginning with that string, path traversal included. It
+   is a large improvement over `Bash(*)`, not a security boundary.
+2. Anything not on the allowlist is **not blocked** — it falls through to the
+   permission system as normal. With auto mode as the default, routine commands
+   are still approved by the safety classifier without prompting, so the
+   practical cost of the tighter list is close to zero.
+
+---
+
+## Deliberately not changed
+
+**`Profile Resolution and Versioning` stays in CLAUDE.md.** Migrating it to
+`.claude/rules/data-integrity.md` was considered and rejected: that rule is
+scoped to `data/profiles/**` and `schemas/**`, but the `--slug` →
+`RESUME_AI_PROFILE` → `.active-profile` resolution order applies to *every*
+tool, including the generators, which run outside those paths. It is a
+cross-cutting convention and belongs in the always-loaded file.
+
+**All five `.claude/rules/*.md` files were left as-is** (beyond the Templates
+append). They total 29,143 chars but cost **zero** resident tokens because every
+one is correctly path-scoped already — that is the pattern this pass extended to
+CLAUDE.md rather than something needing repair.
+
+**Kept in CLAUDE.md, all verbatim:** Project Overview, Architecture, Key Rules,
+Notes vs Resumes (CRITICAL), Source Attribution (CRITICAL), Altitude (CRITICAL),
+Data Integrity, the Rules table, Profile Resolution and Versioning, the
+compatible-release (`~=`) pinning rationale, the "all fixtures are fictional"
+rule, and Lint.
+
+---
+
+## Verification
+
+`pytest` — 268 passed. `ruff check tools/ tests/` — all checks passed. No code
+was touched; both were run to confirm that.

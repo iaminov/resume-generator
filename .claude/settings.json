@@ -10,11 +10,29 @@
       "WebSearch",
       "WebFetch",
       "Agent",
-      "Bash(*)"
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(cd:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(pytest:*)",
+      "Bash(ruff check:*)",
+      "Bash(python3 tools/:*)",
+      "Bash(python tools/:*)",
+      "Bash(.venv/Scripts/python.exe tools/:*)"
     ],
     "deny": [
       "Bash(rm -rf *)",
-      "Bash(rm -r *)"
+      "Bash(rm -r *)",
+      "Bash(rm -fr *)",
+      "Bash(rm -f *)",
+      "Bash(rm --recursive *)",
+      "Bash(git push --force*)",
+      "Bash(git push -f *)",
+      "Bash(curl:*)",
+      "Bash(wget:*)"
     ]
   }
 }

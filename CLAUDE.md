@@ -16,44 +16,9 @@ letters through a lighter two-agent workflow.
 - **Cover letter review**: 3 agents — writer drafts, fact-checker and employer-emulator review once in parallel
 - **Multi-person**: Each person gets their own directory under `data/profiles/` containing all their data
 
-## Directory Structure
-```
-data/
-  .active-profile              # Active person slug (e.g., "jane-doe")
-  profiles/
-    {slug}/
-      profile.json                       # Comprehensive extracted profile (single source of truth)
-      input/
-        input-resumes/                   # Input: person's PDF/DOCX resume files
-        input-job-postings/              # Input: job posting PDF/DOCX/TXT files to apply for
-          processed/                     # Postings already turned into a resume;
-                                          #   move a file back out to reprocess it
-        input-voice-samples/             # OPTIONAL: the person's own writing, used to
-                                          #   match voice in cover letters. Empty is fine —
-                                          #   the letter falls back to a generic voice
-        input-notes/                     # Notes, ideas, open questions, third-party
-                                          #   feedback. Guidance only, NEVER parsed as fact
-      applications/                      # JSON: application tracking records
-      output/
-        output-job-descriptions/         # JSON: parsed/structured job postings
-        output-generated-resumes/        # Output: tailored DOCX resumes
-        output-cover-letters/            # Output: tailored DOCX cover letters
-tools/                         # Shared utility scripts (see Tools section below)
-templates/                     # DOCX resume templates (shared)
-schemas/                       # JSON Schema files for data validation (shared)
-```
-
 ## Agent System
-Seven agents. Resume generation uses six of them via the orchestrator pattern:
-1. **orchestrator** - Coordinates workflow, manages consensus rounds
-2. **resume-expert** - Resume writing specialist, formatting, ATS optimization
-3. **employer-emulator** - Thinks like a hiring manager, evaluates fit
-4. **recruiter** - Independent recruiter perspective, market positioning
-5. **bias-auditor** - Audits for age, gender, ethnicity, disability, and other bias exposure
-6. **fact-checker** - Verifies every claim against profile.json; has veto power on accuracy
-
-Cover letter generation uses three:
-7. **cover-letter-writer** - Drafts the letter, optionally matching the person's voice
+Seven agents, defined in `.claude/agents/`. Six drive resume generation via the
+orchestrator pattern; `cover-letter-writer` drafts the cover letter.
 
 `fact-checker` and `employer-emulator` then review it once in parallel, with at
 most one revision round. Only the fact-checker can block; the emulator advises.
@@ -61,8 +26,6 @@ Two reviewers cover the failure modes that matter for a letter — fabrication,
 and failing to persuade — and no more are added on purpose: consensus sands
 prose toward the safe middle, and sounding like a specific person is the only
 advantage a cover letter has over the resume.
-
-See `.claude/agents/` for full agent definitions.
 
 ## Key Rules
 - **NEVER fabricate skills or experience** - only use data from parsed resumes
@@ -85,78 +48,19 @@ See `.claude/agents/` for full agent definitions.
 
 ## Workflow
 
-### Profile management
-- `/profile-create` — Create a new person's profile directory and set as active
-- `/profile-switch` — Switch active profile to a different person
-- `/profile-delete` — Delete a person's profile and all associated data
+Each command's full workflow lives in `.claude/skills/<name>/SKILL.md` and loads
+when the command runs: `/profile-create`, `/profile-switch`, `/profile-delete`,
+`/parse-resumes`, `/scan-codebase`, `/create-resume`, `/create-cover-letter`,
+`/review-job`, `/track-application`.
 
-### Phase 1: Build the profile (run once, update as needed)
-`/parse-resumes` uses a two-phase pipeline:
-1. **Mechanical extraction**: PDFs are read natively; DOCX files are converted
-   to markdown via `tools/docx_to_md.py`
-2. **AI comprehension**: Claude reads all extracted text, understands context,
-   deduplicates by meaning (not string matching), and builds `profile.json`
+Two constraints the skills depend on but cannot enforce:
 
-Claude IS the parser — no custom scripts for content analysis. The profile is
-the **single source of truth** and must exist before any other skill can run.
-
-### Phase 2: Generate tailored resumes (run per job)
-`/create-resume` takes a job posting + the active profile and produces a
-tailored resume through the 5-agent consensus process. It selects the most
-relevant subset of the profile's skills and experience for that specific role.
-The final resume is generated via `tools/generate_resume.py` — never write
-python-docx code inline or create new scripts for DOCX generation.
-
-### Phase 3: Generate a cover letter (optional, per job)
-`/create-cover-letter` takes a job posting + the active profile and produces a
-tailored letter. The Cover Letter Writer drafts it and the Fact Checker reviews
-it once. Voice is **optional**: drop the person's own writing into
-`input/input-voice-samples/` to have the letter match how they actually write
-(a past cover letter is best, but any substantial prose they wrote will do), or
-skip it and take a clear generic professional voice. The skill always offers
-both rather than defaulting silently. Samples supply *voice only* — `profile.json`
-remains the sole source of facts. Generated via `tools/generate_cover_letter.py`.
-
-### Phase 1b: Add what the code proves (optional, run as repos change)
-`/scan-codebase` augments an existing profile from the person's own source code.
-Resumes record what someone remembered to write down; the code is the primary
-record of what they actually built, and the only source that can disprove a
-claim as well as support one.
-
-Point it at a whole projects folder — that is the normal case:
-
-```bash
-python3 tools/scan_codebase.py ~/projects --all --author "Name" --author handle
-```
-
-`--all` takes the **parent** directory and treats every subdirectory as its own
-project, git-initialized or not; without it, the path is scanned as a single
-project. It descends one level only.
-
-It uses the same two-phase split as `/parse-resumes`:
-
-1. **Mechanical inventory**: `tools/scan_codebase.py` counts lines by language,
-   finds tests, parses declared dependencies, and asks git who wrote how much
-2. **AI comprehension**: Claude reads the actual source and decides what was
-   built and what belongs in the profile
-
-Authorship is settled **before** anything is recorded. The scan returns an
-`all_authors` roster of every committer found, and the user is asked which
-identities are theirs — people commit under bare first names, hosting handles,
-and nicknames, so this is never inferred. `--author` is repeatable for that
-reason.
-
-**A project without git history is still a project.** Missing `.git` removes the
-ability to check authorship and nothing more; those land in `without_git_history`
-and are brought to the user rather than dropped.
-
-Findings are merged into `profile.json` with evidence, never overwriting it
-wholesale, and an existing claim is never deleted just because no code was found
-for it.
-
-### Other commands
-- `/review-job` — Analyze a job posting and evaluate fit against a profile
-- `/track-application` — Full application lifecycle: status, contacts, interviews, comp, follow-ups, outcome
+- **`/parse-resumes` runs first.** `profile.json` is the single source of truth
+  and must exist before any other command can run. `/scan-codebase` augments an
+  existing profile; it never creates one.
+- **Documents are generated only by the pre-built scripts** —
+  `tools/generate_resume.py` and `tools/generate_cover_letter.py`. Never write
+  python-docx code inline or create new scripts for DOCX generation.
 
 ## Rules
 Detailed rules live in `.claude/rules/` and attach automatically by file path:
@@ -222,20 +126,10 @@ All deterministic operations use pre-built, tested scripts in `tools/`. Skills
 must call these scripts — never generate new scripts or write inline code for
 these operations.
 
-| Script | Purpose | Usage |
-|---|---|---|
-| `tools/docx_to_md.py` | Convert single DOCX to markdown; reports any text it could not extract | `python3 tools/docx_to_md.py file.docx [--json]` |
-| `tools/extract_resumes.py` | Batch-extract all resumes for a profile | `python3 tools/extract_resumes.py [--slug name]` |
-| `tools/generate_cover_letter.py` | Generate .docx cover letter from JSON content; warns if over one page or 400 words | `python3 tools/generate_cover_letter.py content.json output.docx` |
-| `tools/generate_resume.py` | Generate .docx resume from JSON content; spacing adapts to fit a page goal | `python3 tools/generate_resume.py content.json output.docx [--target-pages 1] [--density auto\|normal\|compact\|dense]` |
-| `tools/profile_create.py` | Create profile directory structure | `python3 tools/profile_create.py "Full Name" [--slug slug]` |
-| `tools/scan_codebase.py` | Mechanically inventory a codebase: lines by language, tests, declared dependencies, git authorship. Counts only — no judgments | `python3 tools/scan_codebase.py <path> [--all] [--author "Name"] [--out f.json]` |
-| `tools/profile_switch.py` | List profiles or switch active | `python3 tools/profile_switch.py [slug]` |
-| `tools/profile_delete.py` | Delete a profile (dry-run or confirmed) | `python3 tools/profile_delete.py slug [--confirm]` |
-| `tools/validate.py` | Validate JSON against the schemas; `--strict` also checks the data-integrity rules schemas cannot express | `python3 tools/validate.py <file> [--strict]` or `--all` |
-| `tools/application_update.py` | Change an application's status or log activity, with transition validation | `python3 tools/application_update.py <record> --status applied` |
-| `tools/application_status.py` | Report search state; `--analytics` for outcome rates | `python3 tools/application_status.py [--stale-days N] [--analytics] [--json]` |
-| `tools/diff_content.py` | Compare two generated documents by their content sidecars | `python3 tools/diff_content.py old.content.json new.content.json` |
+`ls tools/` lists them; every script takes `--help` for its own arguments. Both
+generators also accept `--dry-run`, which reports the sections, chosen density,
+and estimated page count without writing a file — use it to check a page target
+before committing to one.
 
 Two modules in `tools/` are shared code rather than CLIs:
 
@@ -247,17 +141,6 @@ Two modules in `tools/` are shared code rather than CLIs:
 - **`layout.py`** — text metrics (`wrapped_lines`, `text_width_pt`) and page
   verification (`verify_layout`, `verify_page_count`). Both generators use it,
   so neither has to import the other.
-
-## DOCX Extraction Failsafe
-
-`docx_to_md.py` extracts greedily — body text in document order, tables
-including nested ones and those inside headers and footers, text boxes, and
-headers/footers themselves. It then compares every text node in the file
-against what came out and **reports anything that did not make it**.
-
-No extractor anticipates every construct Word emits, and this output is what
-`profile.json` is built from. A resume quietly losing an employer is far worse
-than a warning, so act on a non-empty `skipped` list rather than ignoring it.
 
 ## Profile Resolution and Versioning
 
@@ -272,12 +155,6 @@ All profile, application, and job-description JSON carries `schema_version`
 missing version or a differing major version rather than failing — refusing to
 validate would block the very edit that fixes it.
 
-## Dry Runs
-
-Both generators accept `--dry-run`, reporting what they would produce (sections,
-chosen density, estimated pages) without writing anything. Use it to check a
-page target before committing to a file.
-
 ## Tests
 
 ```bash
@@ -291,32 +168,6 @@ the no-renderer fallback honest.
 
 **All fixtures are fictional.** The confidentiality rule applies to tests too —
 they are committed, so no real personal data may appear in them.
-
-## Templates
-
-`templates/default.docx` is the base document both generators can start from
-(`--template`). A template supplies **styles, not content**:
-
-- Any body content in it is stripped before generating, and reported in the
-  tool's output. python-docx opens a .docx whole, so leftover text would
-  otherwise be prepended to every document produced from it.
-- It must define `Normal` and `List Bullet`. A .docx saved out of Word that
-  never used a bulleted list will not define `List Bullet`, and the generators
-  reference it by name.
-- A missing template path is an error, not a silent fallback — a typo would
-  otherwise produce an unstyled document with no warning.
-
-Templates are **optional** — both generators produce a complete, correctly
-styled document without one, and `--template` defaults to none.
-
-A user supplying their own puts a `.docx` in `templates/` and passes
-`--template templates/theirs.docx`. Any path works, but `templates/` is the
-convention and `.gitignore` has an exception so `.docx` files there are
-versioned rather than treated as generated output. The easiest starting point
-is a copy of `templates/default.docx`.
-
-Per-run spacing still comes from the density presets, which override the
-template's margins.
 
 ## Dependencies
 Runtime packages are pinned in `requirements.txt` and mirrored in

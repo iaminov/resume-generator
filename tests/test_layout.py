@@ -6,9 +6,14 @@ without anything visibly breaking.
 """
 import pytest
 from generate_resume import (
+    BODY_SIZE,
     DENSITIES,
     DENSITY_BY_NAME,
     ESTIMATE_CALIBRATION,
+    NAME_SIZE,
+    OPT_IN_DENSITIES,
+    ROLE_TITLE_SIZE,
+    SECTION_HEADING_SIZE,
     STRAGGLER_PAGE_FRACTION,
     choose_density,
     estimate_pages,
@@ -115,6 +120,83 @@ class TestChooseDensity:
     def test_generous_goal_keeps_the_roomiest(self, short_resume):
         density, _ = choose_density(short_resume, target_pages=5)
         assert density.name == "normal"
+
+
+class TestOptInDensities:
+    """`ultra` buys space with type size, which the formatting rules only allow
+    when the candidate asks for it. The guarantee under test is that no code
+    path reaches it on its own."""
+
+    def test_ultra_is_registered_but_off_the_automatic_ladder(self):
+        assert "ultra" in DENSITY_BY_NAME
+        assert DENSITY_BY_NAME["ultra"] not in DENSITIES
+
+    def test_automatic_selection_never_reaches_an_opt_in_preset(self, long_resume):
+        # Three routes through choose_density: no goal, a goal the ladder can
+        # meet, and a goal it cannot. The last is the dangerous one -- it falls
+        # back to the tightest preset available, which is where a preset off
+        # the ladder would leak in.
+        for kwargs in ({}, {"target_pages": 3}, {"target_pages": 1}):
+            density, _ = choose_density(long_resume, **kwargs)
+            assert density not in OPT_IN_DENSITIES, kwargs
+            assert density.font_scale == 1.0, kwargs
+
+    def test_ultra_is_reachable_by_name(self, short_resume):
+        density, note = choose_density(short_resume, requested="ultra")
+        assert density.name == "ultra"
+        assert "explicit" in note
+
+    def test_ladder_presets_never_shrink_type(self):
+        for d in DENSITIES:
+            assert d.font_scale == 1.0, d.name
+
+    def test_opt_in_presets_are_the_ones_that_shrink_type(self):
+        for d in OPT_IN_DENSITIES:
+            assert d.font_scale < 1.0, d.name
+
+    def test_ultra_is_more_compact_than_the_tightest_ladder_preset(self, long_resume):
+        assert estimate_pages(long_resume, DENSITY_BY_NAME["ultra"]) < estimate_pages(
+            long_resume, DENSITIES[-1]
+        )
+
+
+class TestFontScaling:
+    """Scaling has to preserve the size hierarchy, not just the sizes."""
+
+    BASES = (NAME_SIZE, SECTION_HEADING_SIZE, ROLE_TITLE_SIZE, BODY_SIZE)
+
+    def test_scaled_sizes_land_on_the_half_point_word_stores(self):
+        ultra = DENSITY_BY_NAME["ultra"]
+        for base in self.BASES:
+            halves = ultra.pt(base).pt * 2
+            assert halves == pytest.approx(round(halves)), base.pt
+
+    def test_hierarchy_survives_scaling(self):
+        # 11pt and 10.5pt scale to 10.45 and 9.975; rounding each on its own is
+        # what keeps headings above role titles instead of merging them.
+        name, heading, role, body = (DENSITY_BY_NAME["ultra"].pt(s).pt for s in self.BASES)
+        assert name > heading > role > body, (name, heading, role, body)
+
+    def test_unscaled_presets_leave_sizes_untouched(self):
+        for d in DENSITIES:
+            for base in self.BASES:
+                assert d.pt(base).pt == pytest.approx(base.pt), (d.name, base.pt)
+
+    def test_generated_document_carries_the_scaled_body_size(
+        self, monkeypatch, tmp_path, short_resume
+    ):
+        import docx
+        import generate_resume
+        import layout
+        monkeypatch.setattr(layout, "_render_pdf", lambda p: None)
+
+        ultra = DENSITY_BY_NAME["ultra"]
+        out = tmp_path / "ultra.docx"
+        generate_resume.generate_resume(short_resume, out, density=ultra)
+
+        rendered = docx.Document(str(out))
+        assert rendered.styles["Normal"].font.size.pt == pytest.approx(ultra.pt(BODY_SIZE).pt)
+        assert rendered.styles["Normal"].font.size.pt < BODY_SIZE.pt
 
 
 class TestConstants:

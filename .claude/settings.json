@@ -1,5 +1,4 @@
 {
-  "model": "opus",
   "permissions": {
     "allow": [
       "Read",
@@ -20,8 +19,7 @@
       "Bash(pytest:*)",
       "Bash(ruff check:*)",
       "Bash(python3 tools/:*)",
-      "Bash(python tools/:*)",
-      "Bash(.venv/Scripts/python.exe tools/:*)"
+      "Bash(python tools/:*)"
     ],
     "deny": [
       "Bash(rm -rf *)",

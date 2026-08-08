@@ -195,3 +195,15 @@ ruff check tools/ tests/
 Configured in `ruff.toml` to catch defects — undefined names, unused imports,
 mutable defaults, unchained raises — without imposing a formatter. CI runs it
 alongside the tests, so a dead import left by a refactor fails the build.
+
+## Git remotes
+
+This repo is typically used as a fork, so pushes and pulls can target different
+remotes. **`git branch -vv` and `git status` show only the fetch remote**, which
+in that setup names the repo you are *not* pushing to. Never infer the push
+target from them:
+
+```bash
+git rev-parse --abbrev-ref '@{push}'      # where a bare `git push` actually goes
+git push --dry-run                        # confirms it without sending anything
+```

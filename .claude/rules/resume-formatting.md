@@ -26,6 +26,24 @@ resume look crammed:
 | `compact` | 0.60" | Middle ground |
 | `dense` | 0.50" | Content-heavy resumes held to a strict page goal |
 
+A fourth preset, `ultra` (0.30" margins, every font scaled to 95%), sits outside
+that ladder. **Automatic selection never reaches it** — it applies only when
+named with `--density ultra` or `"density": "ultra"` in the content JSON.
+
+It exists because the one-page target and the no-shrinking rule genuinely
+conflict for a candidate with more real material than a page holds, and the
+candidate's own stated preference wins that conflict (see `resume-writing.md`).
+Two constraints on using it:
+
+- **Cut weak content first.** Reach for `ultra` only once the remaining
+  material is all worth keeping, never to avoid editing.
+- **It is the candidate's call, not the tool's.** Do not select it to rescue a
+  draft that was simply written long.
+
+Font sizes scale uniformly and are rounded to the half-point Word stores, so the
+name / heading / role-title / body hierarchy survives the scaling rather than
+collapsing into one size.
+
 Selection, in precedence order:
 
 1. `--density` / `--target-pages` on the command line

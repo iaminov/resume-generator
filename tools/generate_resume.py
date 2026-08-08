@@ -18,6 +18,11 @@ heading font sizes never change, since shrinking type to force a fit is what
 makes a resume look crammed. All three stay within the margin bounds documented
 in .claude/rules/resume-formatting.md.
 
+A fourth preset, `ultra`, goes past those bounds: 0.30in margins and every font
+scaled to 95%. It is opt-in only -- automatic selection never reaches it -- and
+exists for a candidate who has weighed the tradeoff and chosen to keep content
+that roomier type would cost them. Prefer cutting weak content first.
+
 Selection, in precedence order:
   1. --density / --target-pages on the command line
   2. an optional "layout" object in the JSON content
@@ -127,11 +132,17 @@ ESTIMATE_CALIBRATION = 1.10
 class Density:
     """A spacing preset.
 
-    Every preset stays inside the bounds documented in resume-formatting.md
-    (0.5-0.75in margins), so tightening density to win a page never produces a
-    non-compliant document. Font sizes are deliberately NOT part of a preset:
-    shrinking type to force a fit is what makes a resume look crammed, which
-    the formatting rules prohibit.
+    The three presets on the automatic ladder stay inside the bounds documented
+    in resume-formatting.md (0.5-0.75in margins) and all leave `font_scale` at
+    1.0, so tightening density to win a page never shrinks type: doing that is
+    what makes a resume look crammed, and the formatting rules prohibit it.
+
+    `font_scale` exists for the one case the rules do allow -- a candidate who
+    has looked at the tradeoff and chosen more content over roomier type. It
+    scales every font size uniformly, so the size relationships between name,
+    headings, role titles and body text are preserved rather than the body
+    alone being squeezed. Presets carrying a scale below 1.0 are opt-in only
+    (see OPT_IN_DENSITIES) and are never reachable by automatic tightening.
     """
 
     name: str
@@ -141,6 +152,18 @@ class Density:
     role_before: float
     block_before: float
     block_after: float
+    font_scale: float = 1.0
+
+    def pt(self, size):
+        """Scale a base font size for this preset.
+
+        Rounded to the half-point, because that is the resolution Word stores
+        font sizes at. Doing it here rather than leaving it to the writer keeps
+        the hierarchy intact: scaling 11pt headings and 10.5pt role titles by
+        0.95 lands them on 10.45 and 9.975, which silently collapse to the same
+        stored size unless each is rounded on its own.
+        """
+        return Pt(round(size.pt * self.font_scale * 2) / 2)
 
 
 DENSITIES = (
@@ -148,7 +171,14 @@ DENSITIES = (
     Density("compact", 0.60, 8, 4, 7, 2, 3),
     Density("dense", 0.50, 6, 3, 6, 2, 2),
 )
-DENSITY_BY_NAME = {d.name: d for d in DENSITIES}
+
+# Reachable only by naming them explicitly. `choose_density` never returns one,
+# so no resume gets smaller type without someone asking for it.
+OPT_IN_DENSITIES = (
+    Density("ultra", 0.30, 5, 2, 5, 1, 2, font_scale=0.95),
+)
+
+DENSITY_BY_NAME = {d.name: d for d in DENSITIES + OPT_IN_DENSITIES}
 DEFAULT_DENSITY = DENSITY_BY_NAME["normal"]
 
 # A trailing page holding only a few lines looks unfinished; resume-formatting.md
@@ -176,14 +206,24 @@ def estimate_pages(data, density):
     usable_w = (PAGE_WIDTH_IN - 2 * density.margin_in) * 72
     usable_h = (PAGE_HEIGHT_IN - 2 * density.margin_in) * 72
 
+    # Every size below is passed through scaled() exactly once, so a preset
+    # carrying font_scale < 1.0 shrinks the estimate the same way it shrinks
+    # the rendered document.
+    def scaled(size_pt):
+        return size_pt * density.font_scale
+
     def line_h(size_pt):
         return size_pt * LINE_HEIGHT
 
     def heading():
-        return density.heading_before + line_h(SECTION_HEADING_SIZE.pt) + density.heading_after
+        return (
+            density.heading_before
+            + line_h(scaled(SECTION_HEADING_SIZE.pt))
+            + density.heading_after
+        )
 
     def paragraph(text, size_pt=None, bold=False, indent_pt=0.0, before=None, after=None):
-        size_pt = BODY_SIZE.pt if size_pt is None else size_pt
+        size_pt = scaled(BODY_SIZE.pt if size_pt is None else size_pt)
         before = density.block_before if before is None else before
         after = density.block_after if after is None else after
         lines = wrapped_lines(text, size_pt, usable_w, bold, indent_pt)
@@ -192,12 +232,12 @@ def estimate_pages(data, density):
     total = 0.0
 
     # Header: name, then optional contact and link lines.
-    total += line_h(NAME_SIZE.pt) + 2
+    total += line_h(scaled(NAME_SIZE.pt)) + 2
     contact = data.get("contact") or {}
     if any(contact.get(f) for f in ("email", "phone", "location")):
-        total += line_h(CONTACT_SIZE.pt) + 2
+        total += line_h(scaled(CONTACT_SIZE.pt)) + 2
     if any(contact.get(f) for f in ("linkedin", "github", "portfolio")):
-        total += line_h(CONTACT_SIZE.pt) + 4
+        total += line_h(scaled(CONTACT_SIZE.pt)) + 4
 
     if (data.get("summary") or "").strip():
         total += heading() + paragraph(data["summary"].strip())
@@ -217,7 +257,12 @@ def estimate_pages(data, density):
         total += heading()
         for role in experience:
             # Title/date line and the company/location line share one paragraph.
-            total += density.role_before + line_h(ROLE_TITLE_SIZE.pt) + line_h(BODY_SIZE.pt) + 2
+            total += (
+                density.role_before
+                + line_h(scaled(ROLE_TITLE_SIZE.pt))
+                + line_h(scaled(BODY_SIZE.pt))
+                + 2
+            )
             for bullet in role.get("bullets") or []:
                 total += paragraph(bullet, indent_pt=BULLET_INDENT_PT, before=1, after=1)
 
@@ -239,7 +284,7 @@ def estimate_pages(data, density):
         for edu in education:
             line = "{} {}".format(edu.get("degree", ""), edu.get("institution", "")).strip()
             total += paragraph(line, after=2)
-            total += len(edu.get("details") or []) * line_h(BODY_SIZE.pt)
+            total += len(edu.get("details") or []) * line_h(scaled(BODY_SIZE.pt))
 
     for key in ("certifications", "publications", "awards"):
         entries = data.get(key) or []
@@ -311,10 +356,10 @@ def choose_density(data, target_pages=None, requested="auto"):
     return DEFAULT_DENSITY, f"auto: '{DEFAULT_DENSITY.name}' (estimated {estimate:.2f} pages)"
 
 
-def set_font(run, size=BODY_SIZE, bold=False, color=COLOR_BODY):
-    """Apply font formatting to a run."""
+def set_font(run, size=None, bold=False, color=COLOR_BODY, density=DEFAULT_DENSITY):
+    """Apply font formatting to a run, scaled for `density`."""
     run.font.name = FONT_NAME
-    run.font.size = size
+    run.font.size = density.pt(BODY_SIZE if size is None else size)
     run.font.bold = bold
     run.font.color.rgb = color
 
@@ -326,7 +371,7 @@ def add_section_heading(doc, text, density=DEFAULT_DENSITY):
     para.paragraph_format.space_after = Pt(density.heading_after)
 
     run = para.add_run(text.upper())
-    set_font(run, size=SECTION_HEADING_SIZE, bold=True, color=COLOR_HEADING)
+    set_font(run, size=SECTION_HEADING_SIZE, bold=True, color=COLOR_HEADING, density=density)
 
     # Bottom border
     pPr = para._p.get_or_add_pPr()
@@ -362,25 +407,25 @@ def add_right_tab(doc, para):
     return para
 
 
-def add_bullet(doc, text):
+def add_bullet(doc, text, density=DEFAULT_DENSITY):
     """Add a bullet point paragraph."""
     para = doc.add_paragraph(style="List Bullet")
     para.paragraph_format.space_before = Pt(1)
     para.paragraph_format.space_after = Pt(1)
     para.clear()
     run = para.add_run(text)
-    set_font(run)
+    set_font(run, density=density)
     return para
 
 
-def build_name_header(doc, data):
+def build_name_header(doc, data, density=DEFAULT_DENSITY):
     """Add candidate name and contact info."""
     # Name
     para = doc.add_paragraph()
     para.alignment = WD_ALIGN_PARAGRAPH.CENTER
     para.paragraph_format.space_after = Pt(2)
     run = para.add_run(data["name"].upper())
-    set_font(run, size=NAME_SIZE, bold=True)
+    set_font(run, size=NAME_SIZE, bold=True, density=density)
 
     # Contact line(s)
     contact = data.get("contact", {})
@@ -399,7 +444,7 @@ def build_name_header(doc, data):
         para.paragraph_format.space_before = Pt(0)
         para.paragraph_format.space_after = Pt(2)
         run = para.add_run(" | ".join(primary))
-        set_font(run, size=CONTACT_SIZE)
+        set_font(run, size=CONTACT_SIZE, density=density)
 
     if links:
         para = doc.add_paragraph()
@@ -407,7 +452,7 @@ def build_name_header(doc, data):
         para.paragraph_format.space_before = Pt(0)
         para.paragraph_format.space_after = Pt(4)
         run = para.add_run(" | ".join(links))
-        set_font(run, size=CONTACT_SIZE, color=COLOR_LINK)
+        set_font(run, size=CONTACT_SIZE, color=COLOR_LINK, density=density)
 
 
 def build_summary(doc, data, density=DEFAULT_DENSITY):
@@ -420,7 +465,7 @@ def build_summary(doc, data, density=DEFAULT_DENSITY):
     para.paragraph_format.space_before = Pt(density.block_before)
     para.paragraph_format.space_after = Pt(density.block_after)
     run = para.add_run(text)
-    set_font(run)
+    set_font(run, density=density)
 
 
 def build_skills(doc, data, density=DEFAULT_DENSITY):
@@ -438,11 +483,11 @@ def build_skills(doc, data, density=DEFAULT_DENSITY):
         para.paragraph_format.space_before = Pt(density.block_before)
         para.paragraph_format.space_after = Pt(1)
         cat_run = para.add_run(f"{category}: ")
-        set_font(cat_run, bold=True)
+        set_font(cat_run, bold=True, density=density)
         # items can be a list or a pre-formatted string
         items_text = ", ".join(items) if isinstance(items, list) else str(items)
         items_run = para.add_run(items_text)
-        set_font(items_run)
+        set_font(items_run, density=density)
 
 
 def build_experience(doc, data, density=DEFAULT_DENSITY):
@@ -459,11 +504,11 @@ def build_experience(doc, data, density=DEFAULT_DENSITY):
         add_right_tab(doc, para)
 
         title_run = para.add_run(role.get("title", "").upper())
-        set_font(title_run, size=ROLE_TITLE_SIZE, bold=True)
+        set_font(title_run, size=ROLE_TITLE_SIZE, bold=True, density=density)
 
         if role.get("dates"):
             date_run = para.add_run("\t" + role["dates"])
-            set_font(date_run, color=COLOR_META)
+            set_font(date_run, color=COLOR_META, density=density)
 
         # Line 2: Company — Location
         meta_parts = [role.get("company", "")]
@@ -473,10 +518,10 @@ def build_experience(doc, data, density=DEFAULT_DENSITY):
         if meta_parts:
             para.add_run("\n")
             meta_run = para.add_run(" — ".join(meta_parts))
-            set_font(meta_run, color=COLOR_META)
+            set_font(meta_run, color=COLOR_META, density=density)
 
         for bullet in role.get("bullets", []):
-            add_bullet(doc, bullet)
+            add_bullet(doc, bullet, density)
 
 
 def build_earlier_career(doc, data, density=DEFAULT_DENSITY):
@@ -494,7 +539,7 @@ def build_earlier_career(doc, data, density=DEFAULT_DENSITY):
         para.paragraph_format.space_before = Pt(density.block_before)
         para.paragraph_format.space_after = Pt(density.block_after)
         run = para.add_run(roles)
-        set_font(run)
+        set_font(run, density=density)
         return
     add_section_heading(doc, "Earlier Career", density)
     entries = []
@@ -510,7 +555,7 @@ def build_earlier_career(doc, data, density=DEFAULT_DENSITY):
         para.paragraph_format.space_before = Pt(density.block_before)
         para.paragraph_format.space_after = Pt(density.block_after)
         run = para.add_run(" | ".join(entries))
-        set_font(run)
+        set_font(run, density=density)
 
 
 def build_education(doc, data, density=DEFAULT_DENSITY):
@@ -527,21 +572,21 @@ def build_education(doc, data, density=DEFAULT_DENSITY):
         degree = edu.get("degree", "")
         if degree:
             run = para.add_run(degree)
-            set_font(run, bold=True)
+            set_font(run, bold=True, density=density)
         institution = edu.get("institution", "")
         if institution:
             run = para.add_run(f" \u2014 {institution}")
-            set_font(run)
+            set_font(run, density=density)
         dates = edu.get("dates", "")
         if dates:
             run = para.add_run("\t" + dates)
-            set_font(run, color=COLOR_META)
+            set_font(run, color=COLOR_META, density=density)
         for detail in edu.get("details", []):
             d_para = doc.add_paragraph()
             d_para.paragraph_format.space_before = Pt(0)
             d_para.paragraph_format.space_after = Pt(0)
             run = d_para.add_run(f"  {detail}")
-            set_font(run, color=COLOR_META)
+            set_font(run, color=COLOR_META, density=density)
 
 
 def build_certifications(doc, data, density=DEFAULT_DENSITY):
@@ -556,15 +601,15 @@ def build_certifications(doc, data, density=DEFAULT_DENSITY):
         para.paragraph_format.space_after = Pt(1)
         add_right_tab(doc, para)
         run = para.add_run(cert.get("name", ""))
-        set_font(run, bold=True)
+        set_font(run, bold=True, density=density)
         issuer = cert.get("issuer", "")
         if issuer:
             run = para.add_run(f" — {issuer}")
-            set_font(run, color=COLOR_META)
+            set_font(run, color=COLOR_META, density=density)
         date = cert.get("date", "")
         if date:
             run = para.add_run("\t" + date)
-            set_font(run, color=COLOR_META)
+            set_font(run, color=COLOR_META, density=density)
 
 
 def build_projects(doc, data, density=DEFAULT_DENSITY):
@@ -578,15 +623,15 @@ def build_projects(doc, data, density=DEFAULT_DENSITY):
         para.paragraph_format.space_before = Pt(density.block_before)
         para.paragraph_format.space_after = Pt(2)
         run = para.add_run(proj.get("name", ""))
-        set_font(run, bold=True)
+        set_font(run, bold=True, density=density)
         desc = proj.get("description", "")
         if desc:
             run = para.add_run(f" \u2014 {desc}")
-            set_font(run)
+            set_font(run, density=density)
         tech = proj.get("technologies", "")
         if tech:
             run = para.add_run(f" ({tech})")
-            set_font(run, color=COLOR_META)
+            set_font(run, color=COLOR_META, density=density)
 
 
 def build_publications(doc, data, density=DEFAULT_DENSITY):
@@ -600,11 +645,11 @@ def build_publications(doc, data, density=DEFAULT_DENSITY):
         para.paragraph_format.space_before = Pt(1)
         para.paragraph_format.space_after = Pt(1)
         run = para.add_run(pub.get("title", ""))
-        set_font(run, bold=True)
+        set_font(run, bold=True, density=density)
         venue = pub.get("venue", "")
         if venue:
             run = para.add_run(f" \u2014 {venue}")
-            set_font(run, color=COLOR_META)
+            set_font(run, color=COLOR_META, density=density)
 
 
 def build_awards(doc, data, density=DEFAULT_DENSITY):
@@ -618,11 +663,11 @@ def build_awards(doc, data, density=DEFAULT_DENSITY):
         para.paragraph_format.space_before = Pt(1)
         para.paragraph_format.space_after = Pt(1)
         run = para.add_run(award.get("name", ""))
-        set_font(run, bold=True)
+        set_font(run, bold=True, density=density)
         details = award.get("details", "")
         if details:
             run = para.add_run(f" \u2014 {details}")
-            set_font(run, color=COLOR_META)
+            set_font(run, color=COLOR_META, density=density)
 
 
 def generate_resume(data, output_path, template_path=None, density=None,
@@ -658,12 +703,12 @@ def generate_resume(data, output_path, template_path=None, density=None,
     # Default style
     style = doc.styles["Normal"]
     style.font.name = FONT_NAME
-    style.font.size = BODY_SIZE
+    style.font.size = density.pt(BODY_SIZE)
     style.paragraph_format.space_before = Pt(0)
     style.paragraph_format.space_after = Pt(2)
 
     # Build sections in standard order (per resume-formatting.md)
-    build_name_header(doc, data)
+    build_name_header(doc, data, density)
     build_summary(doc, data, density)
     build_skills(doc, data, density)
     build_experience(doc, data, density)
